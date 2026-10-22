@@ -1,0 +1,8 @@
+Tool: built-in image_gen, edit mode.
+Preserve the silver laptop, green screen and transparent background. Replace abstract bars with large readable teleprompter script, exactly:
+Welcome to CuePrompt.
+Take a breath. Look ahead.
+Speak with confidence.
+Let your story flow.
+One word at a time.
+Use white bold sans-serif text, with the third line dark green on a mint reading highlight and a triangular reading pointer to its left.

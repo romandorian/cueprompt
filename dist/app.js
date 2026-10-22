@@ -3,6 +3,11 @@ const templates = {
 youtube: {title:'My next great video',text:"Hey there, welcome back.\n\nYou know that feeling when you have something to say, but the words just don't come out right?\n\nToday, we're changing that.\n\nI'm going to share three simple ideas that helped me show up with more confidence — and sound a little more like myself.\n\nNo perfect scripts. No endless retakes. Just a real conversation.\n\nLet's get into it."},
 pitch:{title:'A product worth talking about',text:"What if your next big idea didn't have to wait?\n\nWe built something for people like you. People who see a problem and think: there has to be a better way.\n\nHere's how it works. Start with the thing you want to change. Take one small step. And let us help with the rest.\n\nLess friction. More possibility.\n\nReady to give it a try? Let's make something great."},
 speech:{title:'A moment to remember',text:"Thank you for being here today.\n\nBefore we begin, I'd like you to think of a moment when someone believed in you — before you believed in yourself.\n\nThat small act of encouragement can change everything.\n\nToday is a reminder that we all have the chance to be that person for someone else.\n\nSo let's celebrate the progress we've made, the people beside us, and the possibilities ahead.\n\nHere's to what comes next. Thank you."}};
+Object.assign(templates, {
+meeting:{title:'Team update',text:"Hi everyone. Here is a quick update on [project].\n\nOur goal this week is [goal]. We have completed [milestone], and the main thing we learned is [insight].\n\nThe next priority is [next step]. We need input on [decision] by [date].\n\nBefore we wrap up, what questions or blockers should we discuss?"},
+course:{title:'Teach one useful idea',text:"By the end of this lesson, you will know how to [outcome].\n\nStart with this idea: [key concept]. It matters because [reason].\n\nLet me walk you through an example. First, [step one]. Next, [step two]. Finally, [step three].\n\nNow try it yourself: [exercise].\n\nThe main takeaway is [summary]. In the next lesson, we will explore [next topic]."},
+podcast:{title:'Your next episode',text:"Welcome to [podcast name]. I am [name], and today we are talking about [topic].\n\nIf you have ever wondered [question], this episode is for you.\n\nWe will explore [first point], share [story or example], and leave you with [practical takeaway].\n\nSo get comfortable, and let us get into it."}
+});
 let playing=false,elapsed=0,last=0,frame,stream,recorder,chunks=[],recording=false,scrollPosition=0;
 let data={text:templates.youtube.text,title:templates.youtube.title,speed:40,size:36,mirror:false};
 try {const saved=JSON.parse(localStorage.getItem('cueprompt-v1'));if(saved&&typeof saved.text==='string')data={...data,...saved};}catch{}
@@ -19,6 +24,32 @@ for(const id of ['script','script-title','speed','font-size','mirror'])$(id).add
 $('play').onclick=play;$('reset').onclick=reset;
 function replaceScript(title,text){if($('script').value.trim()&&$('script').value!==templates.youtube.text&&!confirm('Replace the current script? Download it first if you want to keep a copy.'))return;reset();$('script-title').value=title;$('script').value=text;update()}
 document.querySelectorAll('[data-template]').forEach(b=>b.onclick=()=>{const t=templates[b.dataset.template];replaceScript(t.title,t.text);toast('Your starting point is ready. Make it yours.')});
+const sampleTranslations={
+  'zh-CN':['我的下一个精彩视频','大家好，欢迎回来。\n\n你是否也有过这样的时刻：明明有很多想法，却不知道怎样自然地说出来？\n\n今天，我想分享三个帮助我更自信表达的小方法。\n\n不需要完美，也不需要反复重来。只要真诚地开始。'],
+  'zh-TW':['我的下一支精彩影片','大家好，歡迎回來。\n\n你是否也有過這樣的時刻：明明有很多想法，卻不知道怎樣自然地說出來？\n\n今天，我想分享三個幫助我更自信表達的小方法。\n\n不需要完美，也不需要反覆重來。只要真誠地開始。'],
+  ja:['次の素敵な動画','こんにちは。おかえりなさい。\n\n伝えたいことはあるのに、自然な言葉にできない。そんなことはありませんか？\n\n今日は、自信を持って話すための三つの小さなヒントを紹介します。\n\n完璧でなくて大丈夫です。あなたらしく始めましょう。'],
+  ko:['다음 멋진 영상','안녕하세요, 다시 오신 것을 환영합니다.\n\n하고 싶은 말은 많은데 자연스럽게 표현하기 어려운 순간이 있나요?\n\n오늘은 더 자신 있게 말하는 데 도움이 되는 세 가지 방법을 나누겠습니다.\n\n완벽할 필요는 없습니다. 있는 그대로 시작해 봅시다.'],
+  es:['Mi próximo gran vídeo','Hola, qué gusto verte de nuevo.\n\n¿Alguna vez has tenido algo importante que decir, pero no encontrabas las palabras?\n\nHoy comparto tres ideas sencillas para hablar con más confianza.\n\nNo hace falta ser perfecto. Solo hace falta empezar.'],
+  fr:['Ma prochaine grande vidéo','Bonjour, et bienvenue.\n\nVous avez déjà eu beaucoup à dire sans trouver les mots justes ?\n\nAujourd’hui, je partage trois idées simples pour parler avec plus d’assurance.\n\nPas besoin d’être parfait. Il suffit de commencer.'],
+  de:['Mein nächstes tolles Video','Hallo und schön, dass du da bist.\n\nKennst du das: Du hast etwas zu sagen, findest aber nicht die richtigen Worte?\n\nHeute teile ich drei einfache Ideen für mehr Sicherheit beim Sprechen.\n\nDu musst nicht perfekt sein. Fang einfach an.'],
+  pt:['Meu próximo grande vídeo','Olá, que bom ter você aqui.\n\nVocê já teve algo importante para dizer, mas não encontrou as palavras?\n\nHoje vou compartilhar três ideias simples para falar com mais confiança.\n\nVocê não precisa ser perfeito. Basta começar.'],
+  ru:['Моё следующее видео','Здравствуйте, рады снова вас видеть.\n\nБывало ли так, что вам есть что сказать, но трудно подобрать слова?\n\nСегодня я поделюсь тремя простыми идеями, которые помогут говорить увереннее.\n\nНе нужно быть идеальным. Просто начните.'],
+  th:['วิดีโอถัดไปของฉัน','สวัสดี ยินดีต้อนรับกลับมา\n\nคุณเคยมีเรื่องอยากพูด แต่ไม่รู้จะเริ่มอย่างเป็นธรรมชาติอย่างไรไหม\n\nวันนี้ฉันจะแบ่งปันสามวิธีง่าย ๆ ที่ช่วยให้พูดได้อย่างมั่นใจขึ้น\n\nไม่ต้องสมบูรณ์แบบ แค่เริ่มต้นในแบบของคุณเอง'],
+  vi:['Video tiếp theo của tôi','Xin chào, rất vui vì bạn đã quay lại.\n\nBạn đã từng có điều muốn nói nhưng chưa tìm được lời phù hợp chưa?\n\nHôm nay, tôi sẽ chia sẻ ba ý tưởng đơn giản để nói tự tin hơn.\n\nBạn không cần hoàn hảo. Chỉ cần bắt đầu.']
+};
+const languageOptions=[['en','English'],['zh-CN','简体中文'],['zh-TW','繁體中文'],['ja','日本語'],['ko','한국어'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['ru','Русский'],['th','ไทย'],['vi','Tiếng Việt']];
+const templateBox=document.querySelector('.template-box');
+templateBox.classList.add('samples-upgraded');
+templateBox.querySelector('strong').textContent='Teleprompter script samples';
+templateBox.querySelector('p').textContent='Choose a starting point, then make it yours.';
+const templateTools=document.createElement('div');templateTools.className='sample-tools';
+templateTools.innerHTML='<label><span class="sr-only">Sample language</span><select id="sample-language" aria-label="Sample language">'+languageOptions.map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('')+'</select></label><button class="inspire-button" id="inspire" type="button"><span>✧</span> Inspire me</button>';
+templateBox.querySelector('div').prepend(templateTools);
+const sampleStyle=document.createElement('style');sampleStyle.textContent='.samples-upgraded>div{min-width:0;flex:1}.samples-upgraded{align-items:flex-start}.sample-tools{float:right;display:flex;align-items:center;gap:5px;margin:-2px 0 7px 9px}.sample-tools select{border:1px solid #dce3d3;background:#fff;border-radius:4px;color:#596752;font:500 9px DM Sans,sans-serif;padding:5px 19px 5px 6px;max-width:100px;cursor:pointer}.inspire-button{border:1px solid #9aaa87!important;background:#fffdf8!important;color:#526e43!important;border-radius:4px!important;font-size:9px!important;font-weight:650;padding:5px 7px!important;white-space:nowrap}.inspire-button span{font-size:13px;line-height:0;vertical-align:-1px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:420px){.sample-tools{float:none;margin:8px 0 6px}.samples-upgraded .template-chips{clear:both}}';document.head.append(sampleStyle);
+const sampleLanguage=$('sample-language');
+try{sampleLanguage.value=localStorage.getItem('cueprompt-sample-language')||'en'}catch{}
+sampleLanguage.addEventListener('change',()=>{try{localStorage.setItem('cueprompt-sample-language',sampleLanguage.value)}catch{};toast('New samples will be created in '+sampleLanguage.options[sampleLanguage.selectedIndex].text+'.')});
+$('inspire').onclick=()=>{const translated=sampleTranslations[sampleLanguage.value];const sample=translated?{title:translated[0],text:translated[1]}:templates.youtube;replaceScript(sample.title,sample.text);toast('A fresh script is ready. Shape it into your story.')};
 $('new-script').onclick=()=>{replaceScript('Untitled script','');$('script').focus()};
 $('import-button').onclick=()=>$('import-file').click();$('import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(file.size>1024*1024){toast('Choose a text file smaller than 1 MB.');return}try{replaceScript(file.name.replace(/\.txt$/i,''),await file.text());}catch{toast('Could not read this file. Try another .txt file.')}e.target.value=''};
 function download(blob,name){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
@@ -32,3 +63,22 @@ $('record').onclick=()=>{if(recording){stopRecord();return}if(!stream)return;try
 $('help').onclick=()=>$('help-dialog').showModal();$('close-help').onclick=()=>$('help-dialog').close();$('help-dialog').addEventListener('click',e=>{if(e.target===$('help-dialog'))$('help-dialog').close()});
 document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','BUTTON','SUMMARY'].includes(e.target.tagName)||$('help-dialog').open)return;if(e.code==='Space'){e.preventDefault();play()}else if(e.key.toLowerCase()==='r')reset();else if(e.key.toLowerCase()==='f')fullscreen();else if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();$('speed').value=Number($('speed').value)+(e.key==='ArrowUp'?5:-5);update()}});
 window.addEventListener('pagehide',()=>stream?.getTracks().forEach(t=>t.stop()));update();
+
+const viewDefaults={textColor:'#e7ecdf',backgroundColor:'#1c241f',readingWidth:'100',lineSpacing:'1.6',mirrorVertical:false,readingGuide:true};
+let view={...viewDefaults};
+try{view={...view,...JSON.parse(localStorage.getItem('cueprompt-view')||'{}')}}catch{}
+const viewFields={'text-color':'textColor','background-color':'backgroundColor','reading-width':'readingWidth','line-spacing':'lineSpacing','mirror-vertical':'mirrorVertical','reading-guide':'readingGuide'};
+function applyView(){
+$('reading-text').style.color=view.textColor;
+$('prompter').style.backgroundColor=view.backgroundColor;
+$('reading-text').style.width=view.readingWidth+'%';
+$('reading-text').style.margin='0 auto';
+$('reading-text').style.lineHeight=view.lineSpacing;
+$('reading-text').style.transform=`scale(${$('mirror').checked?-1:1},${view.mirrorVertical?-1:1})`;
+document.querySelector('.reading-line').hidden=!view.readingGuide;
+document.querySelector('.reading-arrow').hidden=!view.readingGuide;
+try{localStorage.setItem('cueprompt-view',JSON.stringify(view))}catch{}
+}
+for(const [id,key] of Object.entries(viewFields)){const el=$(id);if(!el)continue;if(el.type==='checkbox')el.checked=view[key];else el.value=view[key];el.addEventListener('input',()=>{view[key]=el.type==='checkbox'?el.checked:el.value;applyView()})}
+$('mirror').addEventListener('input',applyView);
+applyView();
