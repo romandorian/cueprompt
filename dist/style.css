@@ -94,6 +94,8 @@ body.pseudo-fullscreen-open{overflow:hidden}
 .prompter.is-fullscreen.controls-hidden .fs-controls,.prompter.is-fullscreen.controls-hidden .preview-top{opacity:0;pointer-events:none}
 .prompter.is-fullscreen.controls-hidden{cursor:none}
 .prompter.is-fullscreen .key{display:none}
+.prompter.is-fullscreen #reading-text{font-size:var(--reading-font-size,54px)!important}
+.prompter.is-fullscreen .preview-top{top:82px}
 .creator-links{display:flex;flex-wrap:wrap;gap:12px;padding:16px 0;font-size:12px;color:#2e6c50}
 
 /* Dedicated reading mode: turns the existing prompter into a calm, task-first console. */

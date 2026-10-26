@@ -407,6 +407,7 @@ $('script').addEventListener('input', () => {
 $('script-title').addEventListener('input', () => { const s = current(); s.title = $('script-title').value; s.updatedAt = now(); scheduleSave(); });
 function applyTextStyle() {
   $('reading-text').style.fontSize = $('font-size').value + 'px';
+  $('prompter').style.setProperty('--reading-font-size', Math.round(Number($('font-size').value) * 1.5) + 'px');
   $('speed-value').textContent = $('speed').value; $('fs-speed').textContent = $('speed').value; $('reading-speed').textContent = $('speed').value; $('size-value').textContent = $('font-size').value + ' px';
   layoutDirty = true;
 }
@@ -849,10 +850,30 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
     if (incoming && typeof incoming.text === 'string' && incoming.text.trim()) {
       addScript(String(incoming.title || t('script.untitled')).slice(0, 200), incoming.text);
       sessionStorage.removeItem('cueprompt-incoming');
+      if (incoming.refine) { openAi(); document.querySelector('[data-ai-tab="rewrite"]').click(); }
     }
   } catch { /* Existing scripts remain available if handoff storage is unavailable. */ }
   const creatorLinks = document.createElement('div');
   creatorLinks.className = 'creator-links';
   creatorLinks.innerHTML = '<a href="/script-templates/">Script builder ↗</a><a href="/script-extractor/">Transcript cleaner ↗</a><a href="/publishing-assistant/">Publishing assistant ↗</a>';
   document.querySelector('.template-box').after(creatorLinks);
+  const videoLink = document.createElement('a'); videoLink.href = '/video-converter/'; videoLink.textContent = 'Video compressor ↗'; creatorLinks.append(videoLink);
+  const publishButton = document.createElement('button'); publishButton.className = 'ghost-button'; publishButton.textContent = 'Prepare publishing copy →';
+  publishButton.onclick = async () => {
+    try { await CueWorkflow.save('publish', {title:$('script-title').value, text:$('script').value}); location.href = '/publishing-assistant/'; }
+    catch { toast('Could not transfer the draft. Download or copy your script first.'); }
+  };
+  creatorLinks.append(publishButton);
+  const processButton = document.createElement('button'); processButton.className = 'ghost-button'; processButton.textContent = 'Compress / convert →';
+  processButton.onclick = async () => {
+    if (!take) return;
+    processButton.disabled = true;
+    try {
+      await CueWorkflow.save('recording', {blob:take.blob, title:$('script-title').value, createdAt:Date.now()});
+      await CueWorkflow.save('publish', {title:$('script-title').value, text:$('script').value});
+      location.href = '/video-converter/';
+    } catch { toast('Could not save this take for processing. Download it first, then open Video compressor.'); }
+    finally { processButton.disabled = false; }
+  };
+  $('review-download').after(processButton);
 })();

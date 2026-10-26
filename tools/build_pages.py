@@ -63,6 +63,8 @@ def bake(template, code, d, en):
     out = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{url}">', out, count=1)
     out = re.sub(r'"url":"[^"]*"', f'"url":"{url}"', out, count=1)
     out = re.sub(r'<!-- hreflang:start -->.*?<!-- hreflang:end -->', hreflang_block(), out, flags=re.S)
+    out = out.replace('<script src="/app.js" defer></script>', '<script src="/workflow.js" defer></script><script src="/app.js" defer></script><script src="/install.js" defer></script>')
+    out = out.replace('</head>', '<link rel="manifest" href="/manifest.webmanifest"></head>')
     if code != 'en':
         out = out.replace('<script src="/align.js" defer></script>', f'<script src="/i18n/{code}.js" defer></script><script src="/align.js" defer></script>', 1)
         out = out.replace('<meta property="og:type"', f'<meta property="og:locale" content="{code.replace("-", "_")}"><meta property="og:type"', 1)
@@ -115,7 +117,7 @@ def main():
     alt = ''.join(f'<xhtml:link rel="alternate" hreflang="{h}" href="{SITE}{p}"/>' for _, _, _, p, h in LANGS) + f'<xhtml:link rel="alternate" hreflang="x-default" href="{SITE}/"/>'
     urls = ''.join(f'<url><loc>{SITE}{p}</loc>{alt}</url>' for _, _, _, p, _ in LANGS)
     urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in LANDING)
-    urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in ['script-templates', 'script-extractor', 'publishing-assistant'])
+    urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in ['script-templates', 'script-extractor', 'publishing-assistant', 'video-converter'])
     write(os.path.join(DIST, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' + urls + '</urlset>\n')
     print('\n'.join(report))
 
