@@ -78,7 +78,26 @@ const TEMPLATES = {
     podcast: { title: '新一期節目', text: "歡迎收聽[節目名稱]，我是[名字]，今天我們聊聊[話題]。\n\n如果你也好奇過[問題]，這期節目就是為你準備的。[pause]\n\n我們會聊到[第一個觀點]，分享[故事或案例]，最後給你一個[實用建議]。\n\n找個舒服的姿勢，我們開始吧。" }
   }
 };
-function templateFor(key) { const set = TEMPLATES[lang] || TEMPLATES.en; return set[key] || TEMPLATES.en[key]; }
+const LOCAL_TEMPLATE_COPY = {
+  es: { titles: ['Introducción de YouTube', 'Presentación de producto', 'Un breve discurso', 'Actualización de equipo', 'Lección en línea', 'Apertura de podcast'], body: 'Hola, gracias por estar aquí.\n\nHoy quiero compartir una idea clara y útil contigo. Empecemos por lo que importa, paso a paso. [pause]\n\nAl final tendrás una acción sencilla que puedes poner en práctica hoy.\n\n[slow] Empecemos.' },
+  pt: { titles: ['Introdução para YouTube', 'Apresentação de produto', 'Um breve discurso', 'Atualização da equipe', 'Aula online', 'Abertura de podcast'], body: 'Olá, que bom ter você aqui.\n\nHoje quero compartilhar uma ideia clara e útil. Vamos ao que importa, passo a passo. [pause]\n\nNo final, você terá uma ação simples para colocar em prática hoje.\n\n[slow] Vamos começar.' },
+  fr: { titles: ['Introduction YouTube', 'Présentation produit', 'Un court discours', "Point d’équipe", 'Cours en ligne', 'Ouverture de podcast'], body: 'Bonjour, merci d’être là.\n\nAujourd’hui, je veux partager une idée claire et utile. Allons à l’essentiel, pas à pas. [pause]\n\nÀ la fin, vous aurez une action simple à mettre en pratique dès aujourd’hui.\n\n[slow] Commençons.' },
+  de: { titles: ['YouTube-Intro', 'Produktvorstellung', 'Eine kurze Rede', 'Team-Update', 'Online-Lektion', 'Podcast-Auftakt'], body: 'Hallo, schön, dass du da bist.\n\nHeute möchte ich eine klare und hilfreiche Idee mit dir teilen. Gehen wir Schritt für Schritt zum Wesentlichen. [pause]\n\nAm Ende hast du eine einfache Aktion, die du heute umsetzen kannst.\n\n[slow] Los geht’s.' },
+  ja: { titles: ['YouTube の導入', '製品紹介', '短いスピーチ', 'チームの近況', 'オンライン講座', 'ポッドキャストの導入'], body: 'こんにちは。来てくださってありがとうございます。\n\n今日は、役に立つわかりやすいアイデアを一つお話しします。大切なところから、一歩ずつ進めましょう。[pause]\n\n最後には、今日からできるシンプルな行動を持ち帰れます。\n\n[slow] 始めましょう。' },
+  ko: { titles: ['YouTube 인트로', '제품 소개', '짧은 연설', '팀 업데이트', '온라인 강의', '팟캐스트 오프닝'], body: '안녕하세요. 함께해 주셔서 감사합니다.\n\n오늘은 명확하고 유용한 한 가지 아이디어를 나누겠습니다. 중요한 것부터 차근차근 시작해 볼게요. [pause]\n\n마지막에는 오늘 바로 실천할 수 있는 간단한 행동을 얻어 가실 수 있습니다.\n\n[slow] 시작하겠습니다.' },
+  ru: { titles: ['Вступление для YouTube', 'Презентация продукта', 'Короткая речь', 'Обновление команды', 'Онлайн-урок', 'Начало подкаста'], body: 'Здравствуйте, спасибо, что вы здесь.\n\nСегодня я хочу поделиться одной ясной и полезной идеей. Давайте начнём с главного, шаг за шагом. [pause]\n\nВ конце у вас будет простое действие, которое можно сделать уже сегодня.\n\n[slow] Начнём.' },
+  ar: { titles: ['مقدمة يوتيوب', 'عرض منتج', 'خطاب قصير', 'تحديث الفريق', 'درس عبر الإنترنت', 'افتتاح بودكاست'], body: 'مرحباً، شكراً لوجودك هنا.\n\nأريد اليوم أن أشاركك فكرة واضحة ومفيدة. لنبدأ بالأهم، خطوة بخطوة. [pause]\n\nفي النهاية سيكون لديك إجراء بسيط يمكنك تطبيقه اليوم.\n\n[slow] لنبدأ.' },
+  hi: { titles: ['YouTube परिचय', 'उत्पाद परिचय', 'छोटा भाषण', 'टीम अपडेट', 'ऑनलाइन पाठ', 'पॉडकास्ट शुरुआत'], body: 'नमस्ते, यहाँ आने के लिए धन्यवाद।\n\nआज मैं आपके साथ एक स्पष्ट और उपयोगी विचार साझा करना चाहता हूँ। आइए महत्वपूर्ण बात से, कदम-दर-कदम शुरू करें। [pause]\n\nअंत में आपके पास एक सरल काम होगा जिसे आप आज ही कर सकते हैं।\n\n[slow] शुरू करते हैं।' },
+  id: { titles: ['Pembuka YouTube', 'Presentasi produk', 'Pidato singkat', 'Pembaruan tim', 'Kelas online', 'Pembuka podcast'], body: 'Halo, terima kasih sudah hadir.\n\nHari ini saya ingin membagikan satu ide yang jelas dan bermanfaat. Mari mulai dari yang penting, selangkah demi selangkah. [pause]\n\nDi akhir, Anda akan memiliki satu tindakan sederhana yang bisa dilakukan hari ini.\n\n[slow] Mari mulai.' },
+  vi: { titles: ['Mở đầu YouTube', 'Giới thiệu sản phẩm', 'Bài phát biểu ngắn', 'Cập nhật nhóm', 'Bài học trực tuyến', 'Mở đầu podcast'], body: 'Xin chào, cảm ơn bạn đã có mặt.\n\nHôm nay tôi muốn chia sẻ một ý tưởng rõ ràng và hữu ích. Hãy bắt đầu từ điều quan trọng, từng bước một. [pause]\n\nCuối cùng, bạn sẽ có một hành động đơn giản để thực hiện ngay hôm nay.\n\n[slow] Hãy bắt đầu.' },
+  th: { titles: ['เกริ่นนำ YouTube', 'นำเสนอผลิตภัณฑ์', 'สุนทรพจน์สั้น', 'อัปเดตทีม', 'บทเรียนออนไลน์', 'เปิดพอดแคสต์'], body: 'สวัสดี ขอบคุณที่มาร่วมกันวันนี้\n\nวันนี้ฉันอยากแบ่งปันแนวคิดที่ชัดเจนและเป็นประโยชน์ เริ่มจากสิ่งสำคัญทีละขั้นตอนกันเถอะ [pause]\n\nในตอนท้าย คุณจะมีสิ่งเล็ก ๆ ที่ทำได้ทันทีในวันนี้\n\n[slow] มาเริ่มกันเลย' }
+};
+function templateFor(key) {
+  const set = TEMPLATES[lang]; if (set && set[key]) return set[key];
+  const copy = LOCAL_TEMPLATE_COPY[lang];
+  if (copy) { const order = ['youtube', 'pitch', 'speech', 'meeting', 'course', 'podcast']; const title = copy.titles[order.indexOf(key)] || copy.titles[0]; return { title, text: '## ' + title + '\n\n' + copy.body }; }
+  return TEMPLATES.en[key];
+}
 
 /* ---------- script library ---------- */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -812,10 +831,9 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
   $('speed').value = settings.speed; $('font-size').value = settings.size; $('mirror').checked = settings.mirror;
   $('resolution').value = settings.resolution; $('rec-format').value = settings.format; $('countdown-toggle').checked = settings.countdown; $('mirror-camera').checked = settings.mirrorCamera;
   const pageLang = document.documentElement.dataset.locale || 'en';
-  // An explicit language path (/zh/, /ar/, …) wins over the stored preference so shared
-  // deep links always open in their own language; the root/en page still honors the
-  // persisted choice, falling back to the browser language.
-  const initial = pageLang !== 'en' ? pageLang : (settings.uiLang || detectLanguage());
+  // English is the predictable default on the root page. An explicit language URL and a
+  // visitor's deliberate previous choice still win, so shared localized links keep working.
+  const initial = pageLang !== 'en' ? pageLang : (settings.uiLang || 'en');
   lang = initial; dict = I18N.dicts[initial] || I18N.dicts.en;
   initLibrary();
   $('script').value = current().text; $('script-title').value = current().title;
