@@ -844,4 +844,15 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
   if (!SpeechRec) $('mode-follow').classList.add('unsupported');
   reset();
   document.documentElement.classList.add('app-ready');
+  try {
+    const incoming = JSON.parse(sessionStorage.getItem('cueprompt-incoming') || 'null');
+    if (incoming && typeof incoming.text === 'string' && incoming.text.trim()) {
+      addScript(String(incoming.title || t('script.untitled')).slice(0, 200), incoming.text);
+      sessionStorage.removeItem('cueprompt-incoming');
+    }
+  } catch { /* Existing scripts remain available if handoff storage is unavailable. */ }
+  const creatorLinks = document.createElement('div');
+  creatorLinks.className = 'creator-links';
+  creatorLinks.innerHTML = '<a href="/script-templates/">Script builder ↗</a><a href="/script-extractor/">Transcript cleaner ↗</a><a href="/publishing-assistant/">Publishing assistant ↗</a>';
+  document.querySelector('.template-box').after(creatorLinks);
 })();

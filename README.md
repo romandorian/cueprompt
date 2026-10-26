@@ -14,6 +14,8 @@ Open http://localhost:5173. Camera, microphone and speech recognition need `loca
 
 ## Features
 
+- **Creator tools:** `/script-templates/` builds eight speaking formats in English or Simplified Chinese from user-provided points; `/script-extractor/` cleans TXT/MD/SRT/VTT transcripts locally; `/publishing-assistant/` assembles editable publishing copy from the user's own text. All support TXT download and a session-local handoff that creates a new studio script without replacing an existing script. These tools do not yet provide audio transcription, OCR, cloud sync, or video conversion. Generated pages are maintained by `tools/build_creator_tools.py`, called by the main build.
+
 - **Smart Follow (voice follow).** Uses the browser Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`, continuous plus interim results), with 29 speech languages.
   - `align.js` fuzzy-aligns what you said to the script with a local (Smith-Waterman) alignment over a sliding window. Chinese, Japanese and Thai are matched per character; other languages per word, with accent folding and typo tolerance.
   - It tolerates skipped sentences and ad-libs, and ignores unrelated speech.

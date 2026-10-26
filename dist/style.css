@@ -94,6 +94,7 @@ body.pseudo-fullscreen-open{overflow:hidden}
 .prompter.is-fullscreen.controls-hidden .fs-controls,.prompter.is-fullscreen.controls-hidden .preview-top{opacity:0;pointer-events:none}
 .prompter.is-fullscreen.controls-hidden{cursor:none}
 .prompter.is-fullscreen .key{display:none}
+.creator-links{display:flex;flex-wrap:wrap;gap:12px;padding:16px 0;font-size:12px;color:#2e6c50}
 
 /* Dedicated reading mode: turns the existing prompter into a calm, task-first console. */
 .reading-button{background:#17251d;color:#fff;padding:13px 18px;border-radius:6px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:650;white-space:nowrap}.reading-button:hover{background:#2e6c50}.reading-button span{font-size:16px}

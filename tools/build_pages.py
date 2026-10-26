@@ -5,7 +5,7 @@ Source of truth:  src/index.html (English template with data-i18n keys) and src/
 Outputs (dist/):  index.html, <lang>/index.html, i18n.js, i18n/<code>.js, sitemap.xml, hreflang tags on landing pages.
 Run from the project root:  python3 tools/build_pages.py
 """
-import html, json, os, re, sys
+import html, json, os, re, sys, subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, DIST = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'dist')
@@ -76,6 +76,7 @@ def write(path, text):
 
 
 def main():
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'build_creator_tools.py')], check=True)
     dicts = load_locales()
     en = dicts['en']
     with open(os.path.join(SRC, 'index.html'), encoding='utf-8') as f:
@@ -114,6 +115,7 @@ def main():
     alt = ''.join(f'<xhtml:link rel="alternate" hreflang="{h}" href="{SITE}{p}"/>' for _, _, _, p, h in LANGS) + f'<xhtml:link rel="alternate" hreflang="x-default" href="{SITE}/"/>'
     urls = ''.join(f'<url><loc>{SITE}{p}</loc>{alt}</url>' for _, _, _, p, _ in LANGS)
     urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in LANDING)
+    urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in ['script-templates', 'script-extractor', 'publishing-assistant'])
     write(os.path.join(DIST, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' + urls + '</urlset>\n')
     print('\n'.join(report))
 
