@@ -415,7 +415,15 @@ for (const id of ['speed', 'font-size', 'mirror']) $(id).addEventListener('input
   settings.speed = Number($('speed').value); settings.size = Number($('font-size').value); settings.mirror = $('mirror').checked; saveSettings(); applyTextStyle(); applyView();
   if (playing && settings.mode === 'follow') setFollowTarget();
 });
-$('play').onclick = play; $('reset').onclick = reset;
+// The primary CTA is the moment of performance: leave the editor and start in the
+// distraction-free reader. Pause/continue remains available inside that reader.
+async function startPerformance() {
+  if (playing) { pause(); return; }
+  if (!$('script').value.trim()) { toast(t('toast.addScript')); $('script').focus(); return; }
+  if (!isFullscreen()) await enterReadingMode();
+  play();
+}
+$('play').onclick = startPerformance; $('reset').onclick = reset;
 document.querySelectorAll('[data-template]').forEach(b => b.onclick = () => {
   if (recording) { toast(t('toast.stopFirst')); return; }
   const tpl = templateFor(b.dataset.template);
