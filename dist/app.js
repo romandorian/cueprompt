@@ -857,6 +857,9 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
   creatorLinks.className = 'creator-links';
   creatorLinks.innerHTML = '<a href="/script-templates/">Script builder ↗</a><a href="/script-extractor/">Transcript cleaner ↗</a><a href="/publishing-assistant/">Publishing assistant ↗</a>';
   document.querySelector('.template-box').after(creatorLinks);
+  document.querySelectorAll('[data-open-camera]').forEach(link => link.addEventListener('click', () => {
+    setTimeout(() => $('camera-tab').click(), 80);
+  }));
   const videoLink = document.createElement('a'); videoLink.href = '/video-converter/'; videoLink.textContent = 'Video compressor ↗'; creatorLinks.append(videoLink);
   const publishButton = document.createElement('button'); publishButton.className = 'ghost-button'; publishButton.textContent = 'Prepare publishing copy →';
   publishButton.onclick = async () => {
