@@ -1,84 +1,821 @@
+'use strict';
+/* CuePrompt — browser-local teleprompter studio. Plain JS, no build step. */
 const $ = id => document.getElementById(id);
-const templates = {
-youtube: {title:'My next great video',text:"Hey there, welcome back.\n\nYou know that feeling when you have something to say, but the words just don't come out right?\n\nToday, we're changing that.\n\nI'm going to share three simple ideas that helped me show up with more confidence — and sound a little more like myself.\n\nNo perfect scripts. No endless retakes. Just a real conversation.\n\nLet's get into it."},
-pitch:{title:'A product worth talking about',text:"What if your next big idea didn't have to wait?\n\nWe built something for people like you. People who see a problem and think: there has to be a better way.\n\nHere's how it works. Start with the thing you want to change. Take one small step. And let us help with the rest.\n\nLess friction. More possibility.\n\nReady to give it a try? Let's make something great."},
-speech:{title:'A moment to remember',text:"Thank you for being here today.\n\nBefore we begin, I'd like you to think of a moment when someone believed in you — before you believed in yourself.\n\nThat small act of encouragement can change everything.\n\nToday is a reminder that we all have the chance to be that person for someone else.\n\nSo let's celebrate the progress we've made, the people beside us, and the possibilities ahead.\n\nHere's to what comes next. Thank you."}};
-Object.assign(templates, {
-meeting:{title:'Team update',text:"Hi everyone. Here is a quick update on [project].\n\nOur goal this week is [goal]. We have completed [milestone], and the main thing we learned is [insight].\n\nThe next priority is [next step]. We need input on [decision] by [date].\n\nBefore we wrap up, what questions or blockers should we discuss?"},
-course:{title:'Teach one useful idea',text:"By the end of this lesson, you will know how to [outcome].\n\nStart with this idea: [key concept]. It matters because [reason].\n\nLet me walk you through an example. First, [step one]. Next, [step two]. Finally, [step three].\n\nNow try it yourself: [exercise].\n\nThe main takeaway is [summary]. In the next lesson, we will explore [next topic]."},
-podcast:{title:'Your next episode',text:"Welcome to [podcast name]. I am [name], and today we are talking about [topic].\n\nIf you have ever wondered [question], this episode is for you.\n\nWe will explore [first point], share [story or example], and leave you with [practical takeaway].\n\nSo get comfortable, and let us get into it."}
-});
-let playing=false,elapsed=0,last=0,frame,stream,recorder,chunks=[],recording=false,scrollPosition=0;
-let data={text:templates.youtube.text,title:templates.youtube.title,speed:40,size:36,mirror:false};
-try {const saved=JSON.parse(localStorage.getItem('cueprompt-v1'));if(saved&&typeof saved.text==='string')data={...data,...saved};}catch{}
-$('script').value=data.text;$('script-title').value=data.title;$('speed').value=data.speed;$('font-size').value=data.size;$('mirror').checked=data.mirror;
-let toastTimer;
-function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3500)}
-function save(){data={text:$('script').value,title:$('script-title').value,speed:Number($('speed').value),size:Number($('font-size').value),mirror:$('mirror').checked};try{localStorage.setItem('cueprompt-v1',JSON.stringify(data));$('save-state').textContent='Saved on this device';}catch{$('save-state').textContent='Storage unavailable · export your draft';}}
-function update(){const text=$('script').value;const words=text.trim()?text.trim().split(/\s+/).length:0;$('word-count').textContent=words+' words';$('duration').textContent='~'+Math.max(words?1:0,Math.ceil(words/140))+' min read';$('reading-text').textContent=text||'Your next great story starts here.\n\nWrite a few words on the left, then make them your own.';$('reading-text').style.fontSize=$('font-size').value+'px';$('reading-text').classList.toggle('mirrored',$('mirror').checked);$('speed-value').textContent=$('speed').value;$('size-value').textContent=$('font-size').value+' px';save()}
-function tick(time){if(!playing)return;if(last){const dt=Math.min((time-last)/1000,.1);scrollPosition+=Number($('speed').value)*dt;$('scroll-area').scrollTop=scrollPosition;elapsed+=dt;$('elapsed').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');if($('scroll-area').scrollTop+$('scroll-area').clientHeight >= $('scroll-area').scrollHeight-2){pause();toast('That’s a wrap. Reset to read it again.');return}}last=time;frame=requestAnimationFrame(tick)}
-function pause(){playing=false;cancelAnimationFrame(frame);last=0;$('play').innerHTML='<span>▶</span> '+(elapsed?'Continue prompting':'Start prompting');$('mode-label').textContent=elapsed?'PAUSED · FIND YOUR RHYTHM':'READY WHEN YOU ARE'}
-function play(){if(!$('script').value.trim()){toast('Add your script to get started.');$('script').focus();return}if(playing){pause();return}if($('scroll-area').scrollTop+$('scroll-area').clientHeight >= $('scroll-area').scrollHeight-2)reset();scrollPosition=$('scroll-area').scrollTop;playing=true;$('play').innerHTML='<span>Ⅱ</span> Pause prompting';$('mode-label').textContent='YOU’VE GOT THIS · KEEP GOING';last=0;frame=requestAnimationFrame(tick)}
-function reset(){pause();elapsed=0;$('elapsed').textContent='00:00';$('scroll-area').scrollTop=0;scrollPosition=0;$('play').innerHTML='<span>▶</span> Start prompting';$('mode-label').textContent='READY WHEN YOU ARE'}
-for(const id of ['script','script-title','speed','font-size','mirror'])$(id).addEventListener('input',()=>{if(id==='script')reset();update()});
-$('play').onclick=play;$('reset').onclick=reset;
-function replaceScript(title,text){if($('script').value.trim()&&$('script').value!==templates.youtube.text&&!confirm('Replace the current script? Download it first if you want to keep a copy.'))return;reset();$('script-title').value=title;$('script').value=text;update()}
-document.querySelectorAll('[data-template]').forEach(b=>b.onclick=()=>{const t=templates[b.dataset.template];replaceScript(t.title,t.text);toast('Your starting point is ready. Make it yours.')});
-const sampleTranslations={
-  'zh-CN':['我的下一个精彩视频','大家好，欢迎回来。\n\n你是否也有过这样的时刻：明明有很多想法，却不知道怎样自然地说出来？\n\n今天，我想分享三个帮助我更自信表达的小方法。\n\n不需要完美，也不需要反复重来。只要真诚地开始。'],
-  'zh-TW':['我的下一支精彩影片','大家好，歡迎回來。\n\n你是否也有過這樣的時刻：明明有很多想法，卻不知道怎樣自然地說出來？\n\n今天，我想分享三個幫助我更自信表達的小方法。\n\n不需要完美，也不需要反覆重來。只要真誠地開始。'],
-  ja:['次の素敵な動画','こんにちは。おかえりなさい。\n\n伝えたいことはあるのに、自然な言葉にできない。そんなことはありませんか？\n\n今日は、自信を持って話すための三つの小さなヒントを紹介します。\n\n完璧でなくて大丈夫です。あなたらしく始めましょう。'],
-  ko:['다음 멋진 영상','안녕하세요, 다시 오신 것을 환영합니다.\n\n하고 싶은 말은 많은데 자연스럽게 표현하기 어려운 순간이 있나요?\n\n오늘은 더 자신 있게 말하는 데 도움이 되는 세 가지 방법을 나누겠습니다.\n\n완벽할 필요는 없습니다. 있는 그대로 시작해 봅시다.'],
-  es:['Mi próximo gran vídeo','Hola, qué gusto verte de nuevo.\n\n¿Alguna vez has tenido algo importante que decir, pero no encontrabas las palabras?\n\nHoy comparto tres ideas sencillas para hablar con más confianza.\n\nNo hace falta ser perfecto. Solo hace falta empezar.'],
-  fr:['Ma prochaine grande vidéo','Bonjour, et bienvenue.\n\nVous avez déjà eu beaucoup à dire sans trouver les mots justes ?\n\nAujourd’hui, je partage trois idées simples pour parler avec plus d’assurance.\n\nPas besoin d’être parfait. Il suffit de commencer.'],
-  de:['Mein nächstes tolles Video','Hallo und schön, dass du da bist.\n\nKennst du das: Du hast etwas zu sagen, findest aber nicht die richtigen Worte?\n\nHeute teile ich drei einfache Ideen für mehr Sicherheit beim Sprechen.\n\nDu musst nicht perfekt sein. Fang einfach an.'],
-  pt:['Meu próximo grande vídeo','Olá, que bom ter você aqui.\n\nVocê já teve algo importante para dizer, mas não encontrou as palavras?\n\nHoje vou compartilhar três ideias simples para falar com mais confiança.\n\nVocê não precisa ser perfeito. Basta começar.'],
-  ru:['Моё следующее видео','Здравствуйте, рады снова вас видеть.\n\nБывало ли так, что вам есть что сказать, но трудно подобрать слова?\n\nСегодня я поделюсь тремя простыми идеями, которые помогут говорить увереннее.\n\nНе нужно быть идеальным. Просто начните.'],
-  th:['วิดีโอถัดไปของฉัน','สวัสดี ยินดีต้อนรับกลับมา\n\nคุณเคยมีเรื่องอยากพูด แต่ไม่รู้จะเริ่มอย่างเป็นธรรมชาติอย่างไรไหม\n\nวันนี้ฉันจะแบ่งปันสามวิธีง่าย ๆ ที่ช่วยให้พูดได้อย่างมั่นใจขึ้น\n\nไม่ต้องสมบูรณ์แบบ แค่เริ่มต้นในแบบของคุณเอง'],
-  vi:['Video tiếp theo của tôi','Xin chào, rất vui vì bạn đã quay lại.\n\nBạn đã từng có điều muốn nói nhưng chưa tìm được lời phù hợp chưa?\n\nHôm nay, tôi sẽ chia sẻ ba ý tưởng đơn giản để nói tự tin hơn.\n\nBạn không cần hoàn hảo. Chỉ cần bắt đầu.']
-};
-const languageOptions=[['en','English'],['zh-CN','简体中文'],['zh-TW','繁體中文'],['ja','日本語'],['ko','한국어'],['es','Español'],['fr','Français'],['de','Deutsch'],['pt','Português'],['ru','Русский'],['th','ไทย'],['vi','Tiếng Việt']];
-const templateBox=document.querySelector('.template-box');
-templateBox.classList.add('samples-upgraded');
-templateBox.querySelector('strong').textContent='Teleprompter script samples';
-templateBox.querySelector('p').textContent='Choose a starting point, then make it yours.';
-const templateTools=document.createElement('div');templateTools.className='sample-tools';
-templateTools.innerHTML='<label><span class="sr-only">Sample language</span><select id="sample-language" aria-label="Sample language">'+languageOptions.map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('')+'</select></label><button class="inspire-button" id="inspire" type="button"><span>✧</span> Inspire me</button>';
-templateBox.querySelector('div').prepend(templateTools);
-const sampleStyle=document.createElement('style');sampleStyle.textContent='.samples-upgraded>div{min-width:0;flex:1}.samples-upgraded{align-items:flex-start}.sample-tools{float:right;display:flex;align-items:center;gap:5px;margin:-2px 0 7px 9px}.sample-tools select{border:1px solid #dce3d3;background:#fff;border-radius:4px;color:#596752;font:500 9px DM Sans,sans-serif;padding:5px 19px 5px 6px;max-width:100px;cursor:pointer}.inspire-button{border:1px solid #9aaa87!important;background:#fffdf8!important;color:#526e43!important;border-radius:4px!important;font-size:9px!important;font-weight:650;padding:5px 7px!important;white-space:nowrap}.inspire-button span{font-size:13px;line-height:0;vertical-align:-1px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:420px){.sample-tools{float:none;margin:8px 0 6px}.samples-upgraded .template-chips{clear:both}}';document.head.append(sampleStyle);
-const sampleLanguage=$('sample-language');
-try{sampleLanguage.value=localStorage.getItem('cueprompt-sample-language')||'en'}catch{}
-sampleLanguage.addEventListener('change',()=>{try{localStorage.setItem('cueprompt-sample-language',sampleLanguage.value)}catch{};toast('New samples will be created in '+sampleLanguage.options[sampleLanguage.selectedIndex].text+'.')});
-$('inspire').onclick=()=>{const translated=sampleTranslations[sampleLanguage.value];const sample=translated?{title:translated[0],text:translated[1]}:templates.youtube;replaceScript(sample.title,sample.text);toast('A fresh script is ready. Shape it into your story.')};
-$('new-script').onclick=()=>{replaceScript('Untitled script','');$('script').focus()};
-$('import-button').onclick=()=>$('import-file').click();$('import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(file.size>1024*1024){toast('Choose a text file smaller than 1 MB.');return}try{replaceScript(file.name.replace(/\.txt$/i,''),await file.text());}catch{toast('Could not read this file. Try another .txt file.')}e.target.value=''};
-function download(blob,name){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
-$('export-script').onclick=()=>download(new Blob([$ ('script').value],{type:'text/plain;charset=utf-8'}),($('script-title').value.replace(/[^a-z0-9 _-]/gi,'').trim()||'cueprompt-script')+'.txt');
-async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else if($('prompter').requestFullscreen)await $('prompter').requestFullscreen();else toast('Fullscreen is unavailable in this browser. Try landscape orientation.')}catch{toast('Fullscreen is unavailable in this browser.')}}$('fullscreen').onclick=fullscreen;
-function setTab(camera){$('camera-tab').classList.toggle('active',camera);$('prompt-tab').classList.toggle('active',!camera)}
-$('camera-tab').onclick=async()=>{if(stream){setTab(true);$('camera').style.display='block';$('record').hidden=false;return}if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){toast('Camera recording needs a supported browser on HTTPS or localhost.');return}setTab(true);$('camera-notice').hidden=false;$('camera-notice').textContent='Allow camera and microphone access to preview your shot.';try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});$('camera').srcObject=stream;$('camera').style.display='block';$('record').hidden=false;$('camera-notice').hidden=true;toast('Camera ready. Your video stays on this device.')}catch(err){setTab(false);$('camera-notice').textContent='Camera access is unavailable. Check browser permissions and try again.';toast('Could not access the camera or microphone.')}};
-$('prompt-tab').onclick=()=>{if(recording){toast('Stop your recording before switching modes.');return}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('camera').srcObject=null;$('camera').style.display='none';$('record').hidden=true;$('camera-notice').hidden=true;setTab(false)};
-function stopRecord(){if(recorder&&recorder.state!=='inactive')recorder.stop();recording=false;$('record').textContent='● Record';pause()}
-$('record').onclick=()=>{if(recording){stopRecord();return}if(!stream)return;try{const type=['video/webm;codecs=vp9,opus','video/webm','video/mp4'].find(t=>MediaRecorder.isTypeSupported(t));recorder=new MediaRecorder(stream,type?{mimeType:type}:undefined);chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{const blob=new Blob(chunks,{type:recorder.mimeType});download(blob,'cueprompt-'+Date.now()+(recorder.mimeType.includes('mp4')?'.mp4':'.webm'));toast('Recording downloaded. Your words, your moment.')};recorder.onerror=()=>{recording=false;$('record').textContent='● Record';toast('Recording failed. Please try again.')};reset();recorder.start(1000);recording=true;$('record').textContent='■ Stop & save';play()}catch{toast('Recording is unavailable in this browser. Try Chrome or Edge.')}};
-$('help').onclick=()=>$('help-dialog').showModal();$('close-help').onclick=()=>$('help-dialog').close();$('help-dialog').addEventListener('click',e=>{if(e.target===$('help-dialog'))$('help-dialog').close()});
-document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','BUTTON','SUMMARY'].includes(e.target.tagName)||$('help-dialog').open)return;if(e.code==='Space'){e.preventDefault();play()}else if(e.key.toLowerCase()==='r')reset();else if(e.key.toLowerCase()==='f')fullscreen();else if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();$('speed').value=Number($('speed').value)+(e.key==='ArrowUp'?5:-5);update()}});
-window.addEventListener('pagehide',()=>stream?.getTracks().forEach(t=>t.stop()));update();
+const I18N = window.CueI18n;
+const Align = window.CueAlign;
 
-const viewDefaults={textColor:'#e7ecdf',backgroundColor:'#1c241f',readingWidth:'100',lineSpacing:'1.6',mirrorVertical:false,readingGuide:true};
-let view={...viewDefaults};
-try{view={...view,...JSON.parse(localStorage.getItem('cueprompt-view')||'{}')}}catch{}
-const viewFields={'text-color':'textColor','background-color':'backgroundColor','reading-width':'readingWidth','line-spacing':'lineSpacing','mirror-vertical':'mirrorVertical','reading-guide':'readingGuide'};
-function applyView(){
-$('reading-text').style.color=view.textColor;
-$('prompter').style.backgroundColor=view.backgroundColor;
-$('reading-text').style.width=view.readingWidth+'%';
-$('reading-text').style.margin='0 auto';
-$('reading-text').style.lineHeight=view.lineSpacing;
-$('reading-text').style.transform=`scale(${$('mirror').checked?-1:1},${view.mirrorVertical?-1:1})`;
-document.querySelector('.reading-line').hidden=!view.readingGuide;
-document.querySelector('.reading-arrow').hidden=!view.readingGuide;
-try{localStorage.setItem('cueprompt-view',JSON.stringify(view))}catch{}
+/* ---------- i18n ---------- */
+let lang = 'en', dict = I18N.dicts.en;
+function t(key, vars) {
+  let s = (dict && dict[key] != null) ? dict[key] : (I18N.dicts.en[key] != null ? I18N.dicts.en[key] : key);
+  if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => vars[k] != null ? vars[k] : '');
+  return s;
 }
-for(const [id,key] of Object.entries(viewFields)){const el=$(id);if(!el)continue;if(el.type==='checkbox')el.checked=view[key];else el.value=view[key];el.addEventListener('input',()=>{view[key]=el.type==='checkbox'?el.checked:el.value;applyView()})}
-$('mirror').addEventListener('input',applyView);
-applyView();
+function detectLanguage() {
+  const supported = I18N.languages.map(l => l.code);
+  for (const raw of navigator.languages || [navigator.language || 'en']) {
+    const l = String(raw).toLowerCase();
+    if (l.startsWith('zh')) return /tw|hk|mo|hant/.test(l) ? 'zh-TW' : 'zh-CN';
+    const base = l.split('-')[0];
+    const hit = supported.find(c => c.toLowerCase() === base);
+    if (hit) return hit;
+  }
+  return 'en';
+}
+
+/* ---------- storage ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+
+/* The editor remains the preparation space; this creates the focused performance space. */
+const readingConsole = document.createElement('div');
+readingConsole.className = 'reading-console'; readingConsole.id = 'reading-console';
+readingConsole.setAttribute('aria-label', 'Reading mode controls');
+readingConsole.innerHTML = '<span class="reading-console-title">CuePrompt <small>READING MODE</small></span><span class="reading-console-status" id="reading-console-status">READY</span><div class="reading-console-actions"><button id="reading-smaller-text" aria-label="Smaller text">A−</button><button id="reading-larger-text" aria-label="Larger text">A+</button><button id="reading-slower" aria-label="Slower">−</button><span class="fs-speed" id="reading-speed">40</span><button id="reading-faster" aria-label="Faster">+</button><button id="reading-play" class="fs-play" aria-label="Play or pause">▶</button><button id="reading-record" class="fs-record" aria-label="Start or stop recording" hidden>● REC</button><button id="reading-exit" aria-label="Exit reading mode">✕</button></div>';
+$('prompter').append(readingConsole);
+const readingButton = document.createElement('button');
+readingButton.id = 'enter-reading'; readingButton.className = 'reading-button'; readingButton.setAttribute('aria-label', 'Open reading mode');
+readingButton.innerHTML = '<span>⛶</span> Start reading';
+$('play').before(readingButton);
+const legacy = store.get('cueprompt-v1', null);
+const settings = Object.assign({ speed: 40, size: 36, mirror: false, mode: 'steady', speechLang: '', uiLang: '', camera: '', mic: '', resolution: 'auto', format: 'auto', countdown: true, mirrorCamera: true },
+  legacy && typeof legacy === 'object' ? { speed: legacy.speed || 40, size: legacy.size || 36, mirror: !!legacy.mirror } : {},
+  store.get('cueprompt-settings', {}));
+function saveSettings() { store.set('cueprompt-settings', settings); }
+
+/* ---------- templates ---------- */
+const TEMPLATES = {
+  en: {
+    youtube: { title: 'My next great video', text: "## Hook\nHey there, welcome back.\n\nYou know that feeling when you have something to say, but the words just don't come out right?\n\nToday, we're changing that. [pause]\n\n## Main idea\nI'm going to share three simple ideas that helped me show up with more confidence — and sound a little more like myself.\n\nNo perfect scripts. No endless retakes. Just a real conversation.\n\n## Close\n[slow] Let's get into it." },
+    pitch: { title: 'A product worth talking about', text: "## Problem\nWhat if your next big idea didn't have to wait?\n\nWe built something for people like you. People who see a problem and think: there has to be a better way. [pause]\n\n## How it works\nStart with the thing you want to change. Take one small step. And let us help with the rest.\n\nLess friction. More possibility.\n\n## Call to action\nReady to give it a try? Let's make something great." },
+    speech: { title: 'A moment to remember', text: "Thank you for being here today. [pause]\n\nBefore we begin, I'd like you to think of a moment when someone believed in you — before you believed in yourself.\n\nThat small act of encouragement can change everything.\n\nToday is a reminder that we all have the chance to be that person for someone else.\n\n[slow] So let's celebrate the progress we've made, the people beside us, and the possibilities ahead.\n\nHere's to what comes next. Thank you." },
+    meeting: { title: 'Team update', text: "## Update\nHi everyone. Here is a quick update on [project].\n\nOur goal this week is [goal]. We have completed [milestone], and the main thing we learned is [insight].\n\n## Next steps\nThe next priority is [next step]. We need input on [decision] by [date].\n\n## Questions\nBefore we wrap up, what questions or blockers should we discuss?" },
+    course: { title: 'Teach one useful idea', text: "## Outcome\nBy the end of this lesson, you will know how to [outcome].\n\n## Concept\nStart with this idea: [key concept]. It matters because [reason]. [pause]\n\n## Example\nLet me walk you through an example. First, [step one]. Next, [step two]. Finally, [step three].\n\n## Practice\nNow try it yourself: [exercise].\n\nThe main takeaway is [summary]. In the next lesson, we will explore [next topic]." },
+    podcast: { title: 'Your next episode', text: "Welcome to [podcast name]. I am [name], and today we are talking about [topic].\n\nIf you have ever wondered [question], this episode is for you. [pause]\n\nWe will explore [first point], share [story or example], and leave you with [practical takeaway].\n\nSo get comfortable, and let us get into it." }
+  },
+  'zh-CN': {
+    youtube: { title: '我的下一支视频', text: "## 开场\n嗨，欢迎回来。\n\n你有没有过这种感觉：心里有很多话想说，可一开口就是说不顺？\n\n今天，我们就来解决这个问题。[pause]\n\n## 正文\n我会分享三个简单的方法，它们帮我在镜头前更自信，也更像我自己。\n\n不需要完美的稿子，也不用一遍又一遍地重录，就像平常聊天一样。\n\n## 结尾\n[slow] 我们开始吧。" },
+    pitch: { title: '一个值得聊聊的产品', text: "## 痛点\n如果你的下一个好点子，不用再等呢？\n\n我们为像你这样的人做了一款产品。你看到问题时会想：一定有更好的办法。[pause]\n\n## 怎么用\n先找到你最想改变的那件事，迈出一小步，剩下的交给我们。\n\n更少阻力，更多可能。\n\n## 行动\n想试试吗？一起做点了不起的事。" },
+    speech: { title: '值得记住的时刻', text: "谢谢大家今天来到这里。[pause]\n\n开始之前，请你想一想：有没有那么一个时刻，在你还不相信自己的时候，有人先相信了你？\n\n那一点点鼓励，可能改变一切。\n\n今天也提醒我们：每个人都有机会，成为别人生命里的那个人。\n\n[slow] 让我们一起庆祝走过的路、身边的人，还有前方的可能。\n\n敬未来。谢谢大家。" },
+    meeting: { title: '团队周会更新', text: "## 进展\n大家好，我简单同步一下[项目]的进展。\n\n本周目标是[目标]。我们已经完成了[里程碑]，最大的收获是[洞察]。\n\n## 下一步\n接下来的重点是[下一步]。我们需要在[日期]前确定[决策]。\n\n## 讨论\n最后，大家有什么问题或者卡点需要讨论吗？" },
+    course: { title: '讲清楚一个知识点', text: "## 目标\n学完这节课，你将学会[目标]。\n\n## 概念\n先记住一个核心概念：[概念]。它之所以重要，是因为[原因]。[pause]\n\n## 示例\n我们来看一个例子。第一步，[步骤一]；第二步，[步骤二]；最后，[步骤三]。\n\n## 练习\n现在轮到你了：[练习]。\n\n这节课的重点是[总结]。下节课，我们会讲[下一个主题]。" },
+    podcast: { title: '新一期节目', text: "欢迎收听[节目名称]，我是[名字]，今天我们聊聊[话题]。\n\n如果你也好奇过[问题]，这期节目就是为你准备的。[pause]\n\n我们会聊到[第一个观点]，分享[故事或案例]，最后给你一个[实用建议]。\n\n找个舒服的姿势，我们开始吧。" }
+  },
+  'zh-TW': {
+    youtube: { title: '我的下一支影片', text: "## 開場\n嗨，歡迎回來。\n\n你有沒有過這種感覺：心裡有很多話想說，可一開口就是說不順？\n\n今天，我們就來解決這個問題。[pause]\n\n## 正文\n我會分享三個簡單的方法，它們幫我在鏡頭前更自信，也更像我自己。\n\n不需要完美的稿子，也不用一遍又一遍地重錄，就像平常聊天一樣。\n\n## 結尾\n[slow] 我們開始吧。" },
+    pitch: { title: '一個值得聊聊的產品', text: "## 痛點\n如果你的下一個好點子，不用再等呢？\n\n我們為像你這樣的人做了一款產品。你看到問題時會想：一定有更好的辦法。[pause]\n\n## 怎麼用\n先找到你最想改變的那件事，邁出一小步，剩下的交給我們。\n\n更少阻力，更多可能。\n\n## 行動\n想試試嗎？一起做點了不起的事。" },
+    speech: { title: '值得記住的時刻', text: "謝謝大家今天來到這裡。[pause]\n\n開始之前，請你想一想：有沒有那麼一個時刻，在你還不相信自己的時候，有人先相信了你？\n\n那一點點鼓勵，可能改變一切。\n\n今天也提醒我們：每個人都有機會，成為別人生命裡的那個人。\n\n[slow] 讓我們一起慶祝走過的路、身邊的人，還有前方的可能。\n\n敬未來。謝謝大家。" },
+    meeting: { title: '團隊週會更新', text: "## 進展\n大家好，我簡單同步一下[專案]的進展。\n\n本週目標是[目標]。我們已經完成了[里程碑]，最大的收穫是[洞察]。\n\n## 下一步\n接下來的重點是[下一步]。我們需要在[日期]前確定[決策]。\n\n## 討論\n最後，大家有什麼問題或者卡點需要討論嗎？" },
+    course: { title: '講清楚一個知識點', text: "## 目標\n學完這節課，你將學會[目標]。\n\n## 概念\n先記住一個核心概念：[概念]。它之所以重要，是因為[原因]。[pause]\n\n## 示例\n我們來看一個例子。第一步，[步驟一]；第二步，[步驟二]；最後，[步驟三]。\n\n## 練習\n現在輪到你了：[練習]。\n\n這節課的重點是[總結]。下節課，我們會講[下一個主題]。" },
+    podcast: { title: '新一期節目', text: "歡迎收聽[節目名稱]，我是[名字]，今天我們聊聊[話題]。\n\n如果你也好奇過[問題]，這期節目就是為你準備的。[pause]\n\n我們會聊到[第一個觀點]，分享[故事或案例]，最後給你一個[實用建議]。\n\n找個舒服的姿勢，我們開始吧。" }
+  }
+};
+function templateFor(key) { const set = TEMPLATES[lang] || TEMPLATES.en; return set[key] || TEMPLATES.en[key]; }
+
+/* ---------- script library ---------- */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const now = () => Date.now();
+function makeScript(title, text) { const ts = now(); return { id: uid(), title: title || t('script.untitled'), text: text || '', createdAt: ts, updatedAt: ts }; }
+let library = store.get('cueprompt-library', null);
+function initLibrary() {
+  if (!library || !Array.isArray(library.scripts) || !library.scripts.length) {
+    const first = legacy && typeof legacy.text === 'string' ? makeScript(legacy.title || 'My next great video', legacy.text) : makeScript(templateFor('youtube').title, templateFor('youtube').text);
+    library = { version: 1, currentId: first.id, scripts: [first] };
+  }
+  library.scripts = library.scripts.filter(s => s && typeof s.text === 'string' && s.id);
+  if (!library.scripts.find(s => s.id === library.currentId)) library.currentId = library.scripts[0].id;
+  saveLibrary();
+}
+function current() { return library.scripts.find(s => s.id === library.currentId); }
+function saveLibrary() {
+  const ok = store.set('cueprompt-library', library);
+  $('save-state').textContent = ok ? t('save.saved') : t('save.unavailable');
+  $('library-count').textContent = library.scripts.length;
+  return ok;
+}
+let saveTimer;
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveLibrary, 250); }
+function openScript(id) {
+  if (recording) { toast(t('toast.stopFirst')); return; }
+  if (!library.scripts.find(s => s.id === id)) return;
+  library.currentId = id; saveLibrary();
+  $('script').value = current().text; $('script-title').value = current().title;
+  reset(); renderScript(); updateCounts();
+}
+function addScript(title, text, open = true) {
+  const s = makeScript(title, text); library.scripts.unshift(s); saveLibrary();
+  if (open) openScript(s.id);
+  return s;
+}
+
+/* ---------- counting ---------- */
+const CJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g;
+function countScript(text) {
+  const clean = text.replace(/^\s*#{1,6}\s+.*$/gm, ' ').replace(/\[[^\]\n]{1,30}\]/g, ' ');
+  const cjk = (clean.match(CJK) || []).length; const rest = clean.replace(CJK, ' ').trim();
+  const words = rest ? rest.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length : 0;
+  return { cjk, words, minutes: cjk / 250 + words / 150 };
+}
+function updateCounts() {
+  const c = countScript($('script').value);
+  $('word-count').textContent = c.cjk && c.words ? t('count.mixed', { c: c.cjk, w: c.words }) : c.cjk ? t('count.chars', { n: c.cjk }) : t('count.words', { n: c.words });
+  $('duration').textContent = t('count.duration', { n: Math.max(c.cjk || c.words ? 1 : 0, Math.ceil(c.minutes)) });
+}
+
+/* ---------- rendering the reading view ---------- */
+let tokens = [], tokenNorms = [], sections = [], markers = [], paras = [], layoutDirty = true;
+const PAUSE_RE = /^(pause|break|停顿|暂停|停頓|暫停|pausa|ポーズ|休止)$/i, SLOW_RE = /^(slow|slower|slowly|慢|放慢|慢一点|慢一點|lento|langsam|lent|ゆっくり)$/i;
+function renderScript() {
+  const text = $('script').value, root = $('reading-text');
+  root.textContent = ''; tokens = []; sections = []; markers = []; paras = [];
+  if (!text.trim()) { const p = document.createElement('div'); p.className = 'p placeholder'; p.textContent = t('editor.empty'); root.append(p); afterRender(); return; }
+  const frag = document.createDocumentFragment();
+  for (const line of text.split('\n')) {
+    const div = document.createElement('div'); div.dir = 'auto';
+    const h = line.match(/^\s*#{1,6}\s+(.*)$/);
+    if (h) { div.className = 'p cue-heading'; div.textContent = h[1]; sections.push({ title: h[1], el: div, tokenIndex: tokens.length }); frag.append(div); continue; }
+    if (!line.trim()) { div.className = 'p blank'; div.textContent = '\u00a0'; frag.append(div); continue; }
+    div.className = 'p';
+    const addText = seg => {
+      let i = 0;
+      for (const tk of Align.tokenize(seg)) {
+        if (tk.s > i) div.append(seg.slice(i, tk.s));
+        const sp = document.createElement('span'); sp.className = 'w'; sp.textContent = seg.slice(tk.s, tk.e);
+        tokens.push({ n: tk.n, el: sp }); div.append(sp); i = tk.e;
+      }
+      if (i < seg.length) div.append(seg.slice(i));
+    };
+    const re = /\[([^\]\n]{1,30})\]/g; let last = 0, m;
+    while ((m = re.exec(line))) {
+      addText(line.slice(last, m.index));
+      const label = m[1].trim(), type = PAUSE_RE.test(label) ? 'pause' : SLOW_RE.test(label) ? 'slow' : 'cue';
+      const pill = document.createElement('span'); pill.className = 'cue-pill cue-' + type;
+      pill.textContent = (type === 'pause' ? '❙❙ ' : type === 'slow' ? '↓ ' : '') + label;
+      div.append(pill);
+      if (type === 'slow') div.classList.add('is-slow');
+      if (type === 'pause') markers.push({ el: pill, done: false });
+      last = re.lastIndex;
+    }
+    addText(line.slice(last));
+    frag.append(div);
+  }
+  root.append(frag); afterRender();
+}
+function afterRender() {
+  tokenNorms = tokens.map(x => x.n); layoutDirty = true; readMarked = 0;
+  if (followPos > tokens.length) followPos = tokens.length;
+  renderSections(); applyTextStyle();
+}
+function measure() {
+  if (!layoutDirty) return;
+  paras = [...$('reading-text').children].map(el => ({ el, top: el.offsetTop, bottom: el.offsetTop + el.offsetHeight, slow: el.classList.contains('is-slow') }));
+  for (const mk of markers) mk.top = mk.el.offsetTop;
+  layoutDirty = false;
+}
+function guideCenter() { const g = document.querySelector('.reading-line'), sa = $('scroll-area'); return g.offsetTop + g.offsetHeight / 2 - sa.offsetTop; }
+function paraAt(y) { measure(); let lo = 0, hi = paras.length - 1; while (lo <= hi) { const mid = (lo + hi) >> 1, p = paras[mid]; if (y < p.top) hi = mid - 1; else if (y >= p.bottom) lo = mid + 1; else return p; } return null; }
+let currentPara = null;
+function updateCurrentLine() {
+  const p = paraAt($('scroll-area').scrollTop + guideCenter());
+  if (p === currentPara) return;
+  if (currentPara) currentPara.el.classList.remove('current');
+  currentPara = p; if (p) p.el.classList.add('current');
+}
+new ResizeObserver(() => { layoutDirty = true; }).observe($('reading-text'));
+window.addEventListener('resize', () => { layoutDirty = true; });
+
+/* ---------- sections / jump list ---------- */
+function renderSections() {
+  const menu = $('sections-menu'); menu.textContent = '';
+  const mk = (label, onClick, cls) => { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = () => { onClick(); toggleSections(false); }; menu.append(b); };
+  mk(t('sections.start'), () => jumpTo(0, 0), 'muted');
+  if (!sections.length) { const p = document.createElement('p'); p.textContent = t('sections.empty'); menu.append(p); }
+  sections.forEach(s => mk(s.title, () => jumpTo(s.el.offsetTop, s.tokenIndex)));
+}
+function toggleSections(open) { const menu = $('sections-menu'); const o = open != null ? open : menu.hidden; menu.hidden = !o; $('sections-button').setAttribute('aria-expanded', String(o)); }
+function jumpTo(top, tokenIndex) {
+  const y = Math.max(0, top - guideCenter() + 20);
+  $('scroll-area').scrollTop = y; scrollPosition = $('scroll-area').scrollTop; followTarget = scrollPosition;
+  followPos = tokenIndex; markRead(true);
+  measure(); for (const m of markers) m.done = m.top < scrollPosition + guideCenter() - 2;
+  updateCurrentLine();
+}
+$('sections-button').onclick = e => { e.stopPropagation(); toggleSections(); };
+document.addEventListener('click', e => { if (!$('sections-menu').hidden && !e.target.closest('.sections-wrap')) toggleSections(false); });
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(message) { $('toast').textContent = message; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3800); }
+
+/* ---------- playback (steady + smart follow) ---------- */
+let playing = false, elapsed = 0, last = 0, frame, scrollPosition = 0, holdUntil = 0, modeKey = 'state.ready';
+function setModeLabel(key) { modeKey = key; $('mode-label').textContent = t(key); }
+function playLabel() {
+  if (settings.mode === 'follow') return playing ? t('play.stopListen') : t('play.listen');
+  return playing ? t('play.pause') : elapsed ? t('play.continue') : t('play.start');
+}
+function syncPlayUI() {
+  $('play').innerHTML = ''; const icon = document.createElement('span'); icon.textContent = playing ? 'Ⅱ' : '▶';
+  $('play').append(icon, ' ' + playLabel());
+  $('fs-play').textContent = playing ? 'Ⅱ' : '▶';
+  $('reading-play').textContent = playing ? 'Ⅱ' : '▶';
+  $('reading-console-status').textContent = playing ? (settings.mode === 'follow' ? 'SMART FOLLOW' : 'READING') : (elapsed ? 'PAUSED' : 'READY');
+  $('prompter').classList.toggle('is-playing', playing);
+  scheduleHide();
+}
+function formatTime(s) { return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0'); }
+function atEnd() { const sa = $('scroll-area'); return sa.scrollTop + sa.clientHeight >= sa.scrollHeight - 2; }
+function tick(time) {
+  if (!playing) return;
+  const sa = $('scroll-area');
+  if (last) {
+    const dt = Math.min((time - last) / 1000, .1);
+    elapsed += dt; $('elapsed').textContent = formatTime(elapsed);
+    if (settings.mode === 'steady') {
+      if (time < holdUntil) { /* holding on a [pause] cue */ }
+      else {
+        if (holdUntil) { holdUntil = 0; setModeLabel('state.playing'); }
+        measure();
+        const p = paraAt(sa.scrollTop + guideCenter());
+        const speed = Number($('speed').value) * (p && p.slow ? .55 : 1);
+        if (p && p.slow && modeKey !== 'state.slow') setModeLabel('state.slow'); else if ((!p || !p.slow) && modeKey === 'state.slow') setModeLabel('state.playing');
+        scrollPosition += speed * dt; sa.scrollTop = scrollPosition;
+        const y = sa.scrollTop + guideCenter();
+        for (const m of markers) if (!m.done && m.top <= y) { m.done = true; holdUntil = time + 2000; setModeLabel('state.hold'); break; }
+        if (atEnd()) { pause(); toast(t('toast.wrap')); return; }
+      }
+    } else {
+      const d = followTarget - sa.scrollTop;
+      if (Math.abs(d) > .5) { sa.scrollTop += d * Math.min(1, dt * 5); }
+      scrollPosition = sa.scrollTop;
+      updateFollowIndicator(time);
+    }
+    updateCurrentLine();
+  }
+  last = time; frame = requestAnimationFrame(tick);
+}
+function play() {
+  if (!$('script').value.trim()) { toast(t('toast.addScript')); $('script').focus(); return; }
+  if (playing) { pause(); return; }
+  if (settings.mode === 'follow') { if (!startFollow()) return; }
+  else if (atEnd()) reset();
+  const sa = $('scroll-area'); scrollPosition = sa.scrollTop; followTarget = scrollPosition;
+  measure(); for (const m of markers) m.done = m.top < scrollPosition + guideCenter() - 2;
+  playing = true; holdUntil = 0; syncPlayUI();
+  setModeLabel(settings.mode === 'follow' ? 'state.listening' : 'state.playing');
+  last = 0; frame = requestAnimationFrame(tick);
+}
+function pause() {
+  const was = playing; playing = false; cancelAnimationFrame(frame); last = 0; holdUntil = 0;
+  stopFollow(); syncPlayUI();
+  if (was || modeKey !== 'state.ready') setModeLabel(elapsed ? 'state.paused' : 'state.ready');
+}
+function reset() {
+  pause(); elapsed = 0; $('elapsed').textContent = '00:00';
+  $('scroll-area').scrollTop = 0; scrollPosition = 0; followPos = 0; followTarget = 0; markRead(true);
+  for (const m of markers) m.done = false;
+  syncPlayUI(); setModeLabel('state.ready'); updateCurrentLine();
+}
+
+/* ---------- Smart Follow ---------- */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SPEECH_LANGS = [
+  ['zh-CN', '中文（普通话，中国大陆）'], ['zh-TW', '中文（國語，台灣）'], ['zh-HK', '粵語（香港）'], ['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['en-IN', 'English (India)'], ['en-AU', 'English (Australia)'],
+  ['es-ES', 'Español (España)'], ['es-MX', 'Español (México)'], ['pt-BR', 'Português (Brasil)'], ['pt-PT', 'Português (Portugal)'], ['fr-FR', 'Français'], ['de-DE', 'Deutsch'], ['it-IT', 'Italiano'],
+  ['ja-JP', '日本語'], ['ko-KR', '한국어'], ['ru-RU', 'Русский'], ['ar-SA', 'العربية'], ['hi-IN', 'हिन्दी'], ['id-ID', 'Bahasa Indonesia'], ['ms-MY', 'Bahasa Melayu'], ['vi-VN', 'Tiếng Việt'], ['th-TH', 'ไทย'],
+  ['tr-TR', 'Türkçe'], ['nl-NL', 'Nederlands'], ['pl-PL', 'Polski'], ['uk-UA', 'Українська'], ['sv-SE', 'Svenska'], ['fil-PH', 'Filipino']
+];
+const UI_TO_SPEECH = { en: 'en-US', 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW', es: 'es-ES', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE', ja: 'ja-JP', ko: 'ko-KR', ru: 'ru-RU', ar: 'ar-SA', hi: 'hi-IN', id: 'id-ID', vi: 'vi-VN', th: 'th-TH' };
+let followEndTimer = 0, recognizer = null, followPos = 0, followTarget = 0, lastHeard = 0, followFatal = false, readMarked = 0, heardText = '';
+function speechLang() { return settings.speechLang || UI_TO_SPEECH[lang] || 'en-US'; }
+function setFollowStatus(key, vars, isError) { const el = $('follow-status'); el.textContent = t(key, vars); el.dataset.key = key; el.classList.toggle('error', !!isError); }
+function tokenAtGuide() {
+  const y = $('scroll-area').scrollTop + guideCenter() - 4;
+  for (let i = 0; i < tokens.length; i++) if (tokens[i].el.offsetTop + tokens[i].el.offsetHeight >= y) return i;
+  return tokens.length;
+}
+function startFollow() {
+  if (!SpeechRec) { setFollowStatus('follow.unsupported', null, true); toast(t('follow.unsupported')); return false; }
+  followFatal = false; heardText = '';
+  followPos = Math.min(tokenAtGuide(), tokens.length); markRead(true);
+  try {
+    recognizer = new SpeechRec();
+    recognizer.lang = speechLang(); recognizer.continuous = true; recognizer.interimResults = true; recognizer.maxAlternatives = 1;
+    recognizer.onresult = onSpeech;
+    recognizer.onerror = onSpeechError;
+    recognizer.onend = () => { if (playing && settings.mode === 'follow' && !followFatal && recognizer) { try { recognizer.start(); } catch { } } };
+    recognizer.start();
+  } catch (err) { recognizer = null; setFollowStatus('follow.error', null, true); toast(t('follow.error')); return false; }
+  lastHeard = performance.now(); setFollowStatus('follow.status.listening');
+  $('follow-indicator').hidden = false;
+  return true;
+}
+function stopFollow() {
+  if (recognizer) { const r = recognizer; recognizer = null; r.onend = null; try { r.abort(); } catch { } }
+  $('follow-indicator').hidden = true;
+  if (settings.mode === 'follow' && !followFatal) setFollowStatus('follow.status.idle');
+}
+function onSpeech(e) {
+  let text = '';
+  for (let i = Math.max(0, e.results.length - 6); i < e.results.length; i++) text += e.results[i][0].transcript + ' ';
+  lastHeard = performance.now();
+  heardText = text.trim(); if (heardText.length > 48) { heardText = heardText.slice(-48); const sp = heardText.indexOf(' '); if (sp > 0 && sp < 16) heardText = '…' + heardText.slice(sp + 1); }
+  const spoken = Align.tokenize(text).map(x => x.n);
+  const r = Align.align(tokenNorms, spoken, followPos);
+  if (r) { followPos = r.pos; setFollowTarget(); markRead(); }
+  if (followPos >= tokens.length && tokens.length && !followEndTimer) { followEndTimer = setTimeout(() => { followEndTimer = 0; if (playing && settings.mode === 'follow') { pause(); toast(t('toast.wrap')); } }, 1200); }
+}
+function onSpeechError(e) {
+  if (e.error === 'no-speech' || e.error === 'aborted') return;
+  followFatal = true;
+  const key = e.error === 'network' ? 'follow.network' : (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') ? 'follow.denied' : e.error === 'language-not-supported' ? 'follow.langUnsupported' : 'follow.error';
+  pause(); setFollowStatus(key, null, true); toast(t(key));
+  if (e.error === 'network') setMode('steady', true);
+}
+function setFollowTarget() {
+  const tok = tokens[Math.max(0, followPos - 1)]; if (!tok) return;
+  followTarget = Math.max(0, tok.el.offsetTop + tok.el.offsetHeight / 2 - guideCenter());
+}
+function markRead(resetAll) {
+  if (resetAll) { for (let i = 0; i < readMarked && i < tokens.length; i++) tokens[i].el.classList.remove('read'); readMarked = 0; if (settings.mode !== 'follow') return; }
+  const target = Math.min(followPos, tokens.length);
+  for (let i = readMarked; i < target; i++) tokens[i].el.classList.add('read');
+  for (let i = target; i < readMarked; i++) tokens[i].el.classList.remove('read');
+  readMarked = target;
+}
+function updateFollowIndicator(time) {
+  const quiet = time - lastHeard > 1600;
+  const key = quiet ? 'follow.status.waiting' : 'follow.status.listening';
+  $('follow-indicator').classList.toggle('quiet', quiet);
+  $('follow-indicator-text').textContent = t(key);
+  const st = $('follow-status');
+  if (!followFatal) { if (!quiet && heardText) { if (st.dataset.heard !== heardText) { st.dataset.heard = heardText; setFollowStatus('follow.status.heard', { text: heardText }); } } else if (st.dataset.key !== key && quiet) setFollowStatus(key); }
+}
+function setMode(mode, silent) {
+  if (mode === 'follow' && !SpeechRec) { setFollowStatus('follow.unsupported', null, true); $('follow-panel').hidden = false; if (!silent) toast(t('follow.unsupported')); return; }
+  if (playing) pause();
+  settings.mode = mode; saveSettings();
+  $('mode-steady').classList.toggle('active', mode === 'steady'); $('mode-steady').setAttribute('aria-pressed', String(mode === 'steady'));
+  $('mode-follow').classList.toggle('active', mode === 'follow'); $('mode-follow').setAttribute('aria-pressed', String(mode === 'follow'));
+  document.body.classList.toggle('follow-mode', mode === 'follow');
+  $('follow-panel').hidden = mode !== 'follow' && !followFatal;
+  if (mode === 'follow') { followFatal = false; setFollowStatus('follow.status.idle'); }
+  markRead(true); syncPlayUI();
+}
+$('mode-steady').onclick = () => setMode('steady');
+$('mode-follow').onclick = () => setMode('follow');
+function fillSpeechLanguages() {
+  const sel = $('speech-language'); sel.textContent = '';
+  for (const [code, name] of SPEECH_LANGS) sel.append(new Option(name + ' · ' + code, code));
+  sel.value = speechLang();
+}
+$('speech-language').onchange = () => { settings.speechLang = $('speech-language').value; saveSettings(); if (playing && settings.mode === 'follow') { pause(); play(); } };
+
+/* ---------- editor wiring ---------- */
+let renderQueued = false;
+$('script').addEventListener('input', () => {
+  const s = current(); s.text = $('script').value; s.updatedAt = now(); scheduleSave(); updateCounts();
+  if (!renderQueued) { renderQueued = true; requestAnimationFrame(() => { renderQueued = false; const top = $('scroll-area').scrollTop; renderScript(); $('scroll-area').scrollTop = top; if (playing && settings.mode === 'follow') setFollowTarget(); updateCurrentLine(); }); }
+});
+$('script-title').addEventListener('input', () => { const s = current(); s.title = $('script-title').value; s.updatedAt = now(); scheduleSave(); });
+function applyTextStyle() {
+  $('reading-text').style.fontSize = $('font-size').value + 'px';
+  $('speed-value').textContent = $('speed').value; $('fs-speed').textContent = $('speed').value; $('reading-speed').textContent = $('speed').value; $('size-value').textContent = $('font-size').value + ' px';
+  layoutDirty = true;
+}
+for (const id of ['speed', 'font-size', 'mirror']) $(id).addEventListener('input', () => {
+  settings.speed = Number($('speed').value); settings.size = Number($('font-size').value); settings.mirror = $('mirror').checked; saveSettings(); applyTextStyle(); applyView();
+  if (playing && settings.mode === 'follow') setFollowTarget();
+});
+$('play').onclick = play; $('reset').onclick = reset;
+document.querySelectorAll('[data-template]').forEach(b => b.onclick = () => {
+  if (recording) { toast(t('toast.stopFirst')); return; }
+  const tpl = templateFor(b.dataset.template);
+  const s = current();
+  if (s.text.trim()) addScript(tpl.title, tpl.text);
+  else { s.title = tpl.title; s.text = tpl.text; s.updatedAt = now(); saveLibrary(); openScript(s.id); }
+  toast(t('toast.template'));
+});
+$('new-script').onclick = () => { addScript(t('script.untitled'), ''); $('script').focus(); };
+
+/* ---------- files: export, import ---------- */
+function safeFileName(name) { return name.replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().replace(/^\.+|\.+$/g, '').slice(0, 100) || 'cueprompt-script'; }
+function download(blob, name) { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); }
+$('export-script').onclick = () => download(new Blob([$('script').value], { type: 'text/plain;charset=utf-8' }), safeFileName($('script-title').value) + '.txt');
+const loadedScripts = {};
+function loadScript(src) { return loadedScripts[src] || (loadedScripts[src] = new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => { delete loadedScripts[src]; rej(new Error('load ' + src)); }; document.head.append(s); })); }
+function markdownToScript(md) {
+  return md.replace(/\r\n?/g, '\n')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$/gm, '## $1')
+    .replace(/^\s{0,3}>\s?/gm, '')
+    .replace(/^\s*([-*+]|\d+[.)])\s+/gm, '')
+    .replace(/^\s*([-*_]\s*){3,}$/gm, '')
+    .replace(/(\*\*|__)(.+?)\1/g, '$2').replace(/(^|[^\w*])[*_]([^*_\n]+)[*_](?=[^\w*]|$)/g, '$1$2')
+    .replace(/`([^`]+)`/g, '$1').replace(/<[^>]+>/g, '')
+    .replace(/\n{3,}/g, '\n\n').trim();
+}
+function htmlToScript(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html'); const out = [];
+  doc.body.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,td').forEach(el => {
+    if (el.closest('li') && el.tagName !== 'LI') return;
+    const text = el.textContent.replace(/\s+/g, ' ').trim(); if (!text) return;
+    out.push(/^H\d$/.test(el.tagName) ? '## ' + text : text);
+  });
+  return out.join('\n\n');
+}
+async function pdfToScript(buffer) {
+  await loadScript('/vendor/pdf.min.js');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdf.worker.min.js';
+  const pdf = await window.pdfjsLib.getDocument({ data: buffer, isEvalSupported: false }).promise;
+  const pages = [];
+  for (let n = 1; n <= pdf.numPages; n++) {
+    const content = await (await pdf.getPage(n)).getTextContent();
+    let text = '', lastY = null, lastH = 0;
+    for (const item of content.items) {
+      if (!('str' in item)) continue;
+      const y = item.transform[5], h = Math.abs(item.transform[3]) || lastH || 10;
+      if (lastY != null && Math.abs(y - lastY) > 1) {
+        const gap = Math.abs(lastY - y);
+        text += gap > h * 1.8 ? '\n\n' : (/[\u3000-\u9fff]$/.test(text) || /^[\u3000-\u9fff]/.test(item.str) ? '' : ' ');
+      }
+      text += item.str; lastY = y; lastH = h;
+      if (item.hasEOL) { text += ' '; }
+    }
+    pages.push(text.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').trim());
+  }
+  return pages.filter(Boolean).join('\n\n');
+}
+async function importFile(file) {
+  const ext = (file.name.match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase();
+  if (!['txt', 'md', 'markdown', 'docx', 'pdf'].includes(ext)) { toast(t('toast.unsupportedFile')); return; }
+  const limit = ext === 'pdf' || ext === 'docx' ? 25 : 2;
+  if (file.size > limit * 1024 * 1024) { toast(t('toast.fileTooBig', { n: limit })); return; }
+  toast(t('toast.importing'));
+  let text = '';
+  try {
+    if (ext === 'txt') text = await file.text();
+    else if (ext === 'md' || ext === 'markdown') text = markdownToScript(await file.text());
+    else if (ext === 'docx') { await loadScript('/vendor/mammoth.browser.min.js'); const res = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() }); text = htmlToScript(res.value); }
+    else if (ext === 'pdf') { text = await pdfToScript(await file.arrayBuffer()); if (!text.trim()) { toast(t('toast.pdfEmpty')); return; } }
+  } catch (err) { console.warn('Import failed', err); toast(t('toast.importFail')); return; }
+  const title = file.name.replace(/\.[^.]+$/, '');
+  // PDFs made by Chrome/Word often store CJK as Kangxi/radical code points (e.g. ⽂ U+2F42); fold them to normal ideographs.
+  text = text.replace(/[\u2E80-\u2FDF\uF900-\uFAFF]/g, c => c.normalize('NFKC'));
+  addScript(title, text.replace(/\r\n?/g, '\n').trim());
+  toast(t('toast.imported', { name: title }));
+}
+$('import-button').onclick = () => $('import-file').click();
+$('import-file').onchange = async e => { const file = e.target.files[0]; e.target.value = ''; if (file) await importFile(file); };
+
+/* ---------- library dialog ---------- */
+function formatDate(ts) { try { return new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' }).format(ts); } catch { return new Date(ts).toLocaleString(); } }
+function renderLibrary() {
+  const q = $('library-search').value.trim().toLowerCase(), list = $('library-list'); list.textContent = '';
+  const items = library.scripts.slice().sort((a, b) => b.updatedAt - a.updatedAt).filter(s => !q || s.title.toLowerCase().includes(q) || s.text.toLowerCase().includes(q));
+  if (!items.length) { const li = document.createElement('li'); li.className = 'lib-empty'; li.textContent = t('lib.empty'); list.append(li); return; }
+  for (const s of items) {
+    const li = document.createElement('li'); li.className = 'lib-item' + (s.id === library.currentId ? ' is-current' : ''); li.dataset.id = s.id;
+    const open = document.createElement('button'); open.className = 'lib-open';
+    const title = document.createElement('strong'); title.textContent = s.title || t('script.untitled');
+    const meta = document.createElement('span'); const c = countScript(s.text);
+    meta.textContent = [s.id === library.currentId ? t('lib.current') : '', t('lib.updated', { date: formatDate(s.updatedAt) }), c.cjk && c.words ? t('count.mixed', { c: c.cjk, w: c.words }) : c.cjk ? t('count.chars', { n: c.cjk }) : t('count.words', { n: c.words })].filter(Boolean).join(' · ');
+    open.append(title, meta); open.onclick = () => { openScript(s.id); $('library-dialog').close(); };
+    const actions = document.createElement('div'); actions.className = 'lib-actions';
+    const act = (label, cls, fn) => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = fn; actions.append(b); };
+    act(t('lib.rename'), 'act-rename', () => startRename(li, s));
+    act(t('lib.duplicate'), 'act-duplicate', () => { const copy = makeScript(t('lib.copy', { name: s.title }), s.text); library.scripts.unshift(copy); saveLibrary(); renderLibrary(); });
+    act(t('lib.delete'), 'act-delete danger', () => deleteScript(s));
+    li.append(open, actions); list.append(li);
+  }
+}
+function startRename(li, s) {
+  const strong = li.querySelector('strong'); const input = document.createElement('input'); input.className = 'lib-rename'; input.value = s.title; input.setAttribute('aria-label', t('lib.rename'));
+  strong.replaceWith(input); input.focus(); input.select();
+  let done = false;
+  const commit = save => { if (done) return; done = true; if (save && input.value.trim()) { s.title = input.value.trim(); s.updatedAt = now(); saveLibrary(); if (s.id === library.currentId) $('script-title').value = s.title; } renderLibrary(); };
+  input.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') commit(true); if (e.key === 'Escape') { e.preventDefault(); commit(false); } };
+  input.onclick = e => e.stopPropagation();
+  input.onblur = () => commit(true);
+}
+function deleteScript(s) {
+  if (!confirm(t('lib.confirmDelete', { name: s.title }))) return;
+  library.scripts = library.scripts.filter(x => x.id !== s.id);
+  if (!library.scripts.length) library.scripts.push(makeScript(t('script.untitled'), ''));
+  if (s.id === library.currentId) { library.currentId = library.scripts[0].id; saveLibrary(); openScript(library.currentId); } else saveLibrary();
+  renderLibrary();
+}
+$('open-library').onclick = () => { $('library-search').value = ''; renderLibrary(); $('library-dialog').showModal(); };
+$('close-library').onclick = () => $('library-dialog').close();
+$('library-search').oninput = renderLibrary;
+$('library-new').onclick = () => { addScript(t('script.untitled'), ''); $('library-dialog').close(); $('script').focus(); };
+$('library-export').onclick = () => {
+  saveLibrary();
+  const data = { app: 'CuePrompt', version: 1, exportedAt: new Date().toISOString(), scripts: library.scripts };
+  download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'cueprompt-library-' + new Date().toISOString().slice(0, 10) + '.json');
+};
+$('library-import').onclick = () => $('library-import-file').click();
+$('library-import-file').onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || data.app !== 'CuePrompt' || !Array.isArray(data.scripts)) throw new Error('bad');
+    let n = 0;
+    for (const raw of data.scripts) {
+      if (!raw || typeof raw.text !== 'string') continue;
+      const s = { id: String(raw.id || uid()), title: String(raw.title || t('script.untitled')).slice(0, 200), text: raw.text, createdAt: Number(raw.createdAt) || now(), updatedAt: Number(raw.updatedAt) || now() };
+      const existing = library.scripts.find(x => x.id === s.id);
+      if (existing) { if (s.updatedAt > existing.updatedAt) { Object.assign(existing, s); n++; } }
+      else { library.scripts.push(s); n++; }
+    }
+    saveLibrary(); renderLibrary(); openScript(library.currentId); toast(t('lib.imported', { n }));
+  } catch { toast(t('lib.badBackup')); }
+};
+
+/* ---------- fullscreen (native or pseudo) ---------- */
+const isFullscreen = () => $('prompter').classList.contains('is-fullscreen');
+function nativeFullscreenElement() { return document.fullscreenElement || document.webkitFullscreenElement; }
+function setFullscreenState(on, pseudo) { const p = $('prompter'); p.classList.toggle('is-fullscreen', on); p.classList.toggle('pseudo-fullscreen', on && pseudo); document.body.classList.toggle('pseudo-fullscreen-open', on && pseudo); $('fullscreen').setAttribute('aria-label', on ? t('fs.exit') : t('fs.toggle')); layoutDirty = true; showControls(); requestAnimationFrame(() => { if (playing && settings.mode === 'follow') setFollowTarget(); }); }
+async function fullscreen() {
+  const p = $('prompter');
+  try {
+    if (nativeFullscreenElement()) { await (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    if (p.classList.contains('pseudo-fullscreen')) { setFullscreenState(false, true); return; }
+    const request = p.requestFullscreen || p.webkitRequestFullscreen;
+    if (request) { await request.call(p); return; }
+  } catch { }
+  setFullscreenState(true, true);
+}
+async function enterReadingMode() {
+  if (!$('script').value.trim()) { toast(t('toast.addScript')); $('script').focus(); return; }
+  await fullscreen();
+  requestAnimationFrame(() => { measure(); updateCurrentLine(); });
+}
+for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, () => setFullscreenState(!!nativeFullscreenElement(), false));
+let hideTimer;
+function scheduleHide() { clearTimeout(hideTimer); $('prompter').classList.remove('controls-hidden'); if (playing && isFullscreen()) hideTimer = setTimeout(() => $('prompter').classList.add('controls-hidden'), 2500); }
+function showControls() { scheduleHide(); }
+$('prompter').addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && isFullscreen()) showControls(); });
+$('scroll-area').addEventListener('click', () => { if (isFullscreen()) play(); });
+$('scroll-area').addEventListener('scroll', () => { if (!playing) { scrollPosition = $('scroll-area').scrollTop; updateCurrentLine(); } });
+$('fs-play').onclick = () => play();
+$('fs-exit').onclick = fullscreen;
+$('reading-play').onclick = () => play();
+$('reading-exit').onclick = fullscreen;
+$('enter-reading').onclick = enterReadingMode;
+$('reading-smaller-text').onclick = () => { $('font-size').value = Math.max(22, Number($('font-size').value) - 2); $('font-size').dispatchEvent(new Event('input')); showControls(); };
+$('reading-larger-text').onclick = () => { $('font-size').value = Math.min(64, Number($('font-size').value) + 2); $('font-size').dispatchEvent(new Event('input')); showControls(); };
+function nudgeSpeed(delta) { $('speed').value = Number($('speed').value) + delta; settings.speed = Number($('speed').value); saveSettings(); applyTextStyle(); showControls(); }
+$('fs-slower').onclick = () => nudgeSpeed(-5); $('fs-faster').onclick = () => nudgeSpeed(5);
+$('reading-slower').onclick = () => nudgeSpeed(-5); $('reading-faster').onclick = () => nudgeSpeed(5);
+$('fullscreen').onclick = fullscreen;
+
+/* ---------- camera & recording ---------- */
+let stream = null, recorder = null, chunks = [], recording = false, recStartedAt = 0, countdownActive = null, take = null;
+function setTab(camera) { $('camera-tab').classList.toggle('active', camera); $('prompt-tab').classList.toggle('active', !camera); $('prompter').classList.toggle('camera-on', camera && !!stream); }
+function videoConstraints() {
+  const v = {};
+  if (settings.camera) v.deviceId = { exact: settings.camera }; else v.facingMode = 'user';
+  if (settings.resolution === '720') { v.width = { ideal: 1280 }; v.height = { ideal: 720 }; }
+  if (settings.resolution === '1080') { v.width = { ideal: 1920 }; v.height = { ideal: 1080 }; }
+  return v;
+}
+async function openCamera() {
+  if (stream) stream.getTracks().forEach(tr => tr.stop());
+  stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: settings.mic ? { deviceId: { exact: settings.mic } } : true });
+  $('camera').srcObject = stream; $('camera').style.display = 'block';
+  $('camera').classList.toggle('mirrored', settings.mirrorCamera);
+  await fillDevices();
+}
+async function fillDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) return;
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  for (const [sel, kind, key] of [[$('camera-select'), 'videoinput', 'camera'], [$('mic-select'), 'audioinput', 'mic']]) {
+    sel.textContent = ''; sel.append(new Option(t('rec.default'), ''));
+    devices.filter(d => d.kind === kind && d.deviceId && d.deviceId !== 'default').forEach((d, i) => sel.append(new Option(d.label || (kind === 'videoinput' ? t('rec.camera') : t('rec.mic')) + ' ' + (i + 1), d.deviceId)));
+    sel.value = [...sel.options].some(o => o.value === settings[key]) ? settings[key] : '';
+  }
+}
+$('camera-tab').onclick = async () => {
+  if (stream) { setTab(true); $('camera').style.display = 'block'; $('record').hidden = false; return; }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast(t('toast.camUnsupported')); return; }
+  setTab(true); $('camera-notice').hidden = false; $('camera-notice').textContent = t('cam.allow');
+  try { await openCamera(); $('record').hidden = false; $('camera-notice').hidden = true; setTab(true); updateRecordUI(); $('recording-options').open = true; toast(t('toast.camReady')); }
+  catch (err) { stream = null; setTab(false); $('camera-notice').textContent = t('cam.unavailable'); toast(t('toast.camFail')); }
+};
+function closeCamera() { if (stream) { stream.getTracks().forEach(tr => tr.stop()); stream = null; } $('camera').srcObject = null; $('camera').style.display = 'none'; $('record').hidden = true; $('camera-notice').hidden = true; setTab(false); updateRecordUI(); }
+$('prompt-tab').onclick = () => { if (recording || countdownActive) { toast(t('toast.stopFirst')); return; } closeCamera(); };
+async function reopenIfOpen() { if (stream && !recording) { try { await openCamera(); setTab(true); } catch { toast(t('toast.camFail')); } } }
+$('camera-select').onchange = () => { settings.camera = $('camera-select').value; saveSettings(); reopenIfOpen(); };
+$('mic-select').onchange = () => { settings.mic = $('mic-select').value; saveSettings(); reopenIfOpen(); };
+$('resolution').onchange = () => { settings.resolution = $('resolution').value; saveSettings(); reopenIfOpen(); };
+$('rec-format').onchange = () => { settings.format = $('rec-format').value; saveSettings(); };
+$('countdown-toggle').onchange = () => { settings.countdown = $('countdown-toggle').checked; saveSettings(); };
+$('mirror-camera').onchange = () => { settings.mirrorCamera = $('mirror-camera').checked; saveSettings(); $('camera').classList.toggle('mirrored', settings.mirrorCamera); };
+function pickMimeType() {
+  const mp4 = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4'], webm = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  const order = settings.format === 'webm' ? webm.concat(mp4) : mp4.concat(webm);
+  return order.find(type => { try { return MediaRecorder.isTypeSupported(type); } catch { return false; } });
+}
+function runCountdown(seconds) {
+  return new Promise(resolve => {
+    const el = $('countdown'); let n = seconds; el.hidden = false; el.textContent = n;
+    const timer = setInterval(() => { n--; if (n <= 0) { finish(true); } else el.textContent = n; }, 1000);
+    const finish = ok => { clearInterval(timer); el.hidden = true; countdownActive = null; resolve(ok); };
+    countdownActive = () => finish(false);
+  });
+}
+async function startRecording() {
+  if (!stream) return;
+  if (!$('script').value.trim()) { toast(t('toast.addScript')); $('script').focus(); return; }
+  reset();
+  $('record').textContent = '■ ' + t('record.stop');
+  if (settings.countdown && !(await runCountdown(3))) { $('record').textContent = '● ' + t('record.start'); return; }
+  try {
+    const type = pickMimeType();
+    recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined); chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    recorder.onstop = () => { const mime = recorder.mimeType || type || 'video/webm'; openReview(new Blob(chunks, { type: mime }), mime, (performance.now() - recStartedAt) / 1000); };
+    recorder.onerror = () => { recording = false; updateRecordUI(); toast(t('toast.recFail')); };
+    recorder.start(1000); recording = true; recStartedAt = performance.now(); updateRecordUI();
+    play();
+  } catch { recording = false; updateRecordUI(); toast(t('toast.recUnavailable')); }
+}
+function stopRecording() { if (recorder && recorder.state !== 'inactive') recorder.stop(); recording = false; updateRecordUI(); pause(); }
+function updateRecordUI() { $('record').textContent = recording ? '■ ' + t('record.stop') : '● ' + t('record.start'); $('rec-dot').hidden = !recording; $('prompter').classList.toggle('is-recording', recording); $('reading-record').hidden = !stream; $('reading-record').textContent = recording ? '■ STOP' : '● REC'; }
+$('record').onclick = () => { if (countdownActive) { countdownActive(); return; } if (recording) { stopRecording(); return; } startRecording(); };
+$('reading-record').onclick = () => $('record').click();
+function openReview(blob, mime, seconds) {
+  if (take) URL.revokeObjectURL(take.url);
+  take = { blob, mime, url: URL.createObjectURL(blob), downloaded: false, ext: mime.includes('mp4') ? 'mp4' : 'webm' };
+  $('review-video').src = take.url;
+  $('review-meta').textContent = formatTime(seconds) + ' · ' + (blob.size / 1048576).toFixed(1) + ' MB · ' + take.ext.toUpperCase();
+  $('review-dialog').showModal();
+}
+function closeReview(force) {
+  if (take && !take.downloaded && !force && !confirm(t('review.confirmDiscard'))) return false;
+  $('review-video').pause(); $('review-video').removeAttribute('src'); $('review-video').load();
+  if (take) { URL.revokeObjectURL(take.url); take = null; }
+  $('review-dialog').close(); return true;
+}
+$('review-download').onclick = () => { if (!take) return; download(take.blob, safeFileName('cueprompt-' + ($('script-title').value || 'take')) + '-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.' + take.ext); take.downloaded = true; toast(t('toast.downloaded')); };
+$('review-retake').onclick = () => { if (closeReview(true)) startRecording(); };
+$('review-discard').onclick = () => closeReview(false);
+$('close-review').onclick = () => closeReview(false);
+$('review-dialog').addEventListener('cancel', e => { e.preventDefault(); closeReview(false); });
+
+/* ---------- AI writer (bring your own key) ---------- */
+const AI_PRESETS = { dashscope: 'https://dashscope.aliyuncs.com/compatible-mode/v1', dashscopeIntl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' };
+const ai = Object.assign({ base: AI_PRESETS.dashscope, model: 'qwen-plus', key: '' }, store.get('cueprompt-ai', {}));
+const AI_LANGS = [['English', 'English'], ['Simplified Chinese', '简体中文'], ['Traditional Chinese', '繁體中文'], ['Spanish', 'Español'], ['Portuguese', 'Português'], ['French', 'Français'], ['German', 'Deutsch'], ['Italian', 'Italiano'], ['Japanese', '日本語'], ['Korean', '한국어'], ['Russian', 'Русский'], ['Arabic', 'العربية'], ['Hindi', 'हिन्दी'], ['Indonesian', 'Bahasa Indonesia'], ['Vietnamese', 'Tiếng Việt'], ['Thai', 'ไทย'], ['Turkish', 'Türkçe'], ['Dutch', 'Nederlands'], ['Polish', 'Polski']];
+const UI_TO_AI = { en: 'English', 'zh-CN': 'Simplified Chinese', 'zh-TW': 'Traditional Chinese', es: 'Spanish', pt: 'Portuguese', fr: 'French', de: 'German', ja: 'Japanese', ko: 'Korean', ru: 'Russian', ar: 'Arabic', hi: 'Hindi', id: 'Indonesian', vi: 'Vietnamese', th: 'Thai' };
+let aiTab = 'generate';
+function fillAiLanguages() {
+  for (const sel of document.querySelectorAll('.ai-lang-select')) { const v = sel.value; sel.textContent = ''; for (const [en, native] of AI_LANGS) sel.append(new Option(native, en)); sel.value = v || UI_TO_AI[lang] || 'English'; }
+  if (!$('ai-target').dataset.touched) $('ai-target').value = lang === 'en' ? 'Simplified Chinese' : 'English';
+}
+$('ai-target').onchange = () => { $('ai-target').dataset.touched = '1'; };
+function openAi() {
+  $('ai-base').value = ai.base; $('ai-model').value = ai.model; $('ai-key').value = ai.key; $('ai-preset').value = presetFor(ai.base);
+  $('ai-connection').open = !ai.key; $('ai-error').hidden = true;
+  $('ai-dialog').showModal();
+}
+function saveAi() { ai.base = $('ai-base').value.trim(); ai.model = $('ai-model').value.trim(); ai.key = $('ai-key').value.trim(); store.set('cueprompt-ai', ai); }
+for (const id of ['ai-base', 'ai-model', 'ai-key']) $(id).addEventListener('change', saveAi);
+function presetFor(base) { return base === AI_PRESETS.dashscope ? 'dashscope' : base === AI_PRESETS.dashscopeIntl ? 'dashscopeIntl' : 'custom'; }
+$('ai-preset').onchange = () => { const v = $('ai-preset').value; if (v === 'custom') { if (Object.values(AI_PRESETS).includes($('ai-base').value)) $('ai-base').value = ''; $('ai-base').focus(); } else { $('ai-base').value = AI_PRESETS[v]; if (!/^qwen/.test($('ai-model').value)) $('ai-model').value = 'qwen-plus'; } saveAi(); };
+$('ai-base').addEventListener('input', () => { $('ai-preset').value = presetFor($('ai-base').value.trim()); });
+$('ai-forget').onclick = () => { $('ai-key').value = ''; saveAi(); };
+$('ai-button').onclick = openAi; $('close-ai').onclick = () => $('ai-dialog').close();
+document.querySelectorAll('[data-ai-tab]').forEach(b => b.onclick = () => {
+  aiTab = b.dataset.aiTab;
+  document.querySelectorAll('[data-ai-tab]').forEach(x => x.classList.toggle('active', x === b));
+  document.querySelectorAll('[data-ai-pane]').forEach(p => p.hidden = p.dataset.aiPane !== aiTab);
+});
+$('ai-rewrite-mode').onchange = () => { $('ai-instruction-wrap').hidden = $('ai-rewrite-mode').value !== 'custom'; };
+const AI_SYSTEM = "You are a scriptwriter for teleprompter videos and talks. Write words meant to be spoken aloud: short sentences, a natural rhythm and short paragraphs separated by blank lines. You may start sections with '## ' headings and add [pause] where a pause helps the delivery. Output only the script itself: no title line, no explanations, no other markdown.";
+const CJK_AI = ['Simplified Chinese', 'Traditional Chinese', 'Japanese'];
+function aiMessages() {
+  const script = $('script').value.trim();
+  if (aiTab === 'generate') {
+    const topic = $('ai-topic').value.trim(); if (!topic) throw new Error(t('ai.needTopic'));
+    const minutes = Math.min(20, Math.max(0.5, Number($('ai-duration').value) || 1)), language = $('ai-language').value, tone = $('ai-tone').value;
+    const size = CJK_AI.includes(language) ? Math.round(minutes * 250) + ' characters' : Math.round(minutes * 150) + ' words';
+    return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Write a ${tone} teleprompter script in ${language} about:\n${topic}\n\nTarget length: about ${minutes} minute(s) when spoken, roughly ${size}.` }];
+  }
+  if (!script) throw new Error(t('ai.needScript'));
+  if (aiTab === 'rewrite') {
+    const mode = $('ai-rewrite-mode').value;
+    const instruction = { shorter: 'Make it about 30% shorter while keeping the key message.', conversational: 'Make it sound more natural and conversational, as if talking to one person.', clearer: 'Make it clearer and easier to follow, with simpler sentences.' }[mode] || $('ai-instruction').value.trim() || 'Improve it.';
+    return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Rewrite the following teleprompter script. ${instruction} Keep the same language. Keep '## ' headings and [pause]/[slow] markers where they still make sense.\n\nSCRIPT:\n${script}` }];
+  }
+  return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Translate the following teleprompter script into ${$('ai-target').value}. Make it sound natural when spoken. Keep '## ' headings and keep [pause]/[slow] markers in place with the bracket keywords in English.\n\nSCRIPT:\n${script}` }];
+}
+$('ai-run').onclick = async () => {
+  saveAi(); const err = $('ai-error'); err.hidden = true;
+  const fail = msg => { err.textContent = msg; err.hidden = false; };
+  if (!ai.base || !ai.model || !ai.key) { $('ai-connection').open = true; fail(t('ai.needKey')); return; }
+  let messages; try { messages = aiMessages(); } catch (e) { fail(e.message); return; }
+  const btn = $('ai-run'); btn.disabled = true; btn.lastElementChild.textContent = t('ai.running');
+  try {
+    let res;
+    try { res = await fetch(ai.base.replace(/\/+$/, '') + '/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ai.key }, body: JSON.stringify({ model: ai.model, messages, temperature: 0.7 }) }); }
+    catch { fail(t('ai.errorCors')); return; }
+    let data = null; try { data = await res.json(); } catch { }
+    if (!res.ok) { fail(t('ai.errorHttp', { msg: (data && (data.error?.message || data.message)) || res.status + ' ' + res.statusText })); return; }
+    let text = data?.choices?.[0]?.message?.content || '';
+    text = text.replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
+    if (!text) { fail(t('ai.empty')); return; }
+    $('ai-result').value = text; $('ai-result-wrap').hidden = false;
+  } finally { btn.disabled = false; btn.lastElementChild.textContent = t('ai.run'); }
+};
+$('ai-replace').onclick = () => { const s = current(); s.text = $('ai-result').value; s.updatedAt = now(); saveLibrary(); openScript(s.id); $('ai-dialog').close(); };
+$('ai-new').onclick = () => { const first = $('ai-result').value.split('\n').find(l => l.trim()) || t('script.untitled'); addScript(first.replace(/^#+\s*/, '').slice(0, 60), $('ai-result').value); $('ai-dialog').close(); };
+
+/* ---------- help & keyboard ---------- */
+$('help').onclick = () => $('help-dialog').showModal(); $('close-help').onclick = () => $('help-dialog').close();
+for (const d of document.querySelectorAll('dialog')) d.addEventListener('click', e => { if (e.target === d && d.id !== 'review-dialog') d.close(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('prompter').classList.contains('pseudo-fullscreen')) { setFullscreenState(false, true); return; }
+  if (e.key === 'Escape' && !$('sections-menu').hidden) { toggleSections(false); return; }
+  if (['INPUT', 'TEXTAREA', 'BUTTON', 'SUMMARY', 'SELECT'].includes(e.target.tagName) || document.querySelector('dialog[open]')) return;
+  const k = e.key.toLowerCase();
+  if (e.code === 'Space') { e.preventDefault(); play(); }
+  else if (k === 'r') reset();
+  else if (k === 'f') fullscreen();
+  else if (k === 'm') setMode(settings.mode === 'follow' ? 'steady' : 'follow');
+  else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); nudgeSpeed(e.key === 'ArrowUp' ? 5 : -5); }
+});
+window.addEventListener('pagehide', () => { stream?.getTracks().forEach(tr => tr.stop()); stopFollow(); saveLibrary(); });
+
+/* ---------- reading view options ---------- */
+const viewDefaults = { textColor: '#e7ecdf', backgroundColor: '#1c241f', readingWidth: '100', lineSpacing: '1.6', mirrorVertical: false, readingGuide: true, highlight: true };
+const view = Object.assign({}, viewDefaults, store.get('cueprompt-view', {}));
+const viewFields = { 'text-color': 'textColor', 'background-color': 'backgroundColor', 'reading-width': 'readingWidth', 'line-spacing': 'lineSpacing', 'mirror-vertical': 'mirrorVertical', 'reading-guide': 'readingGuide', 'highlight-line': 'highlight' };
+function applyView() {
+  const rt = $('reading-text');
+  rt.style.color = view.textColor; $('prompter').style.backgroundColor = view.backgroundColor;
+  rt.style.width = view.readingWidth + '%'; rt.style.margin = '0 auto'; rt.style.lineHeight = view.lineSpacing;
+  $('prompter-stage').style.transform = `scale(${$('mirror').checked ? -1 : 1},${view.mirrorVertical ? -1 : 1})`;
+  document.querySelector('.reading-line').hidden = !view.readingGuide; document.querySelector('.reading-arrow').hidden = !view.readingGuide;
+  rt.classList.toggle('highlight', !!view.highlight);
+  layoutDirty = true; store.set('cueprompt-view', view);
+}
+for (const [id, key] of Object.entries(viewFields)) { const el = $(id); if (el.type === 'checkbox') el.checked = view[key]; else el.value = view[key]; el.addEventListener('input', () => { view[key] = el.type === 'checkbox' ? el.checked : el.value; applyView(); }); }
+
+/* ---------- language switching ---------- */
+function applyI18n() {
+  const meta = I18N.languages.find(l => l.code === lang) || I18N.languages[0];
+  document.documentElement.lang = lang; document.documentElement.dir = meta.dir || 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll('[data-i18n-content]').forEach(el => { el.setAttribute('content', t(el.dataset.i18nContent)); });
+  document.title = t('meta.title');
+  $('ui-language').value = lang;
+  updateCounts(); syncPlayUI(); setModeLabel(modeKey); updateRecordUI(); saveLibrary(); fillAiLanguages(); renderSections();
+  const st = $('follow-status'); if (st.dataset.key && st.dataset.key !== 'follow.status.heard') setFollowStatus(st.dataset.key, null, st.classList.contains('error'));
+  if (!$('script').value.trim()) renderScript();
+  if ($('library-dialog').open) renderLibrary();
+  $('fullscreen').setAttribute('aria-label', isFullscreen() ? t('fs.exit') : t('fs.toggle'));
+}
+async function setLanguage(code, persist) {
+  if (!I18N.languages.some(l => l.code === code)) code = 'en';
+  try { dict = await I18N.load(code); lang = code; } catch { dict = I18N.dicts.en; lang = 'en'; }
+  if (persist) {
+    settings.uiLang = lang; saveSettings();
+    const path = (I18N.languages.find(l => l.code === lang) || {}).path || '/';
+    if (location.pathname !== path && /^\/([a-z]{2}(-[a-z]{2})?\/)?$/.test(location.pathname)) history.replaceState(null, '', path + location.hash);
+  }
+  applyI18n();
+  if (!settings.speechLang) $('speech-language').value = speechLang();
+}
+function fillLanguagePicker() { const sel = $('ui-language'); sel.textContent = ''; for (const l of I18N.languages) sel.append(new Option(l.name, l.code)); }
+$('ui-language').onchange = () => setLanguage($('ui-language').value, true);
+
+/* ---------- boot ---------- */
+(async function boot() {
+  fillLanguagePicker();
+  $('speed').value = settings.speed; $('font-size').value = settings.size; $('mirror').checked = settings.mirror;
+  $('resolution').value = settings.resolution; $('rec-format').value = settings.format; $('countdown-toggle').checked = settings.countdown; $('mirror-camera').checked = settings.mirrorCamera;
+  const pageLang = document.documentElement.dataset.locale || 'en';
+  // An explicit language path (/zh/, /ar/, …) wins over the stored preference so shared
+  // deep links always open in their own language; the root/en page still honors the
+  // persisted choice, falling back to the browser language.
+  const initial = pageLang !== 'en' ? pageLang : (settings.uiLang || detectLanguage());
+  lang = initial; dict = I18N.dicts[initial] || I18N.dicts.en;
+  initLibrary();
+  $('script').value = current().text; $('script-title').value = current().title;
+  fillSpeechLanguages(); fillAiLanguages();
+  applyView(); renderScript();
+  await setLanguage(initial, false);
+  setMode(settings.mode === 'follow' && SpeechRec ? 'follow' : 'steady', true);
+  if (!SpeechRec) $('mode-follow').classList.add('unsupported');
+  reset();
+  document.documentElement.classList.add('app-ready');
+})();
