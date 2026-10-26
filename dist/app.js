@@ -11,6 +11,12 @@ function t(key, vars) {
   if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => vars[k] != null ? vars[k] : '');
   return s;
 }
+function readingUi(key) {
+  const zh = lang === 'zh-CN' ? { start: '开始阅读', mode: '阅读模式', ready: '准备就绪', reading: '正在阅读', follow: '语音跟读', paused: '已暂停' } :
+    lang === 'zh-TW' ? { start: '開始閱讀', mode: '閱讀模式', ready: '準備就緒', reading: '正在閱讀', follow: '語音跟讀', paused: '已暫停' } :
+    { start: 'Start reading', mode: 'READING MODE', ready: 'READY', reading: 'READING', follow: 'SMART FOLLOW', paused: 'PAUSED' };
+  return zh[key];
+}
 function detectLanguage() {
   const supported = I18N.languages.map(l => l.code);
   for (const raw of navigator.languages || [navigator.language || 'en']) {
@@ -221,7 +227,7 @@ function syncPlayUI() {
   $('play').append(icon, ' ' + playLabel());
   $('fs-play').textContent = playing ? 'Ⅱ' : '▶';
   $('reading-play').textContent = playing ? 'Ⅱ' : '▶';
-  $('reading-console-status').textContent = playing ? (settings.mode === 'follow' ? 'SMART FOLLOW' : 'READING') : (elapsed ? 'PAUSED' : 'READY');
+  $('reading-console-status').textContent = playing ? (settings.mode === 'follow' ? readingUi('follow') : readingUi('reading')) : (elapsed ? readingUi('paused') : readingUi('ready'));
   $('prompter').classList.toggle('is-playing', playing);
   scheduleHide();
 }
@@ -777,6 +783,8 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
   document.querySelectorAll('[data-i18n-content]').forEach(el => { el.setAttribute('content', t(el.dataset.i18nContent)); });
   document.title = t('meta.title');
+  $('enter-reading').lastChild.textContent = ' ' + readingUi('start');
+  document.querySelector('.reading-console-title small').textContent = readingUi('mode');
   $('ui-language').value = lang;
   updateCounts(); syncPlayUI(); setModeLabel(modeKey); updateRecordUI(); saveLibrary(); fillAiLanguages(); renderSections();
   const st = $('follow-status'); if (st.dataset.key && st.dataset.key !== 'follow.status.heard') setFollowStatus(st.dataset.key, null, st.classList.contains('error'));
