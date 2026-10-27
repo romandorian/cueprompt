@@ -859,6 +859,7 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
       addScript(String(incoming.title || t('script.untitled')).slice(0, 200), incoming.text);
       sessionStorage.removeItem('cueprompt-incoming');
       if (incoming.refine) { openAi(); document.querySelector('[data-ai-tab="rewrite"]').click(); }
+      if (incoming.read) setTimeout(() => startPerformance(), 80);
     }
   } catch { /* Existing scripts remain available if handoff storage is unavailable. */ }
   const creatorLinks = document.createElement('div');

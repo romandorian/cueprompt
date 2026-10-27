@@ -64,10 +64,12 @@
     const tags = value('keywords').split(',').map(s => s.trim().replace(/[^\p{L}\p{N}_]/gu, '')).filter(Boolean).slice(0, 10).map(s => '#' + s).join(' ');
     output(title, `TITLE\n${title}\n\nDESCRIPTION\n${lines.slice(0, 5).join('\n')}\n\n${value('publish-action')}\n\nTAGS\n${tags}\n\nBEFORE YOU PUBLISH\n□ Watch the exported video\n□ Check audio and captions\n□ Verify links and names\n□ Choose a thumbnail\n□ Review platform visibility`);
   };
-  el('use').onclick = () => {
+  const handoff = readNow => {
     if (!value('result')) { status('Create or paste a draft first.'); return; }
-    try { sessionStorage.setItem('cueprompt-incoming', JSON.stringify({title:value('result-title'), text:value('result')})); location.href = '/#studio'; } catch { status('Browser storage is unavailable. Download your draft and import it in the studio.'); }
+    try { sessionStorage.setItem('cueprompt-incoming', JSON.stringify({title:value('result-title'), text:value('result'), read:!!readNow})); location.href = '/#studio'; } catch { status('Browser storage is unavailable. Download your draft and import it in the studio.'); }
   };
+  el('use').onclick = () => handoff(false);
+  el('read').onclick = () => handoff(true);
   el('download').onclick = () => {
     if (!value('result')) { status('Create or paste a draft first.'); return; }
     const url = URL.createObjectURL(new Blob([el('result').value], {type:'text/plain;charset=utf-8'}));
