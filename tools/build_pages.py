@@ -119,6 +119,7 @@ def main():
     urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in LANDING)
     urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in ['script-templates', 'script-extractor', 'publishing-assistant', 'video-converter'])
     write(os.path.join(DIST, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' + urls + '</urlset>\n')
+    write(os.path.join(DIST, 'robots.txt'), f'User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n')
     print('\n'.join(report))
 
 

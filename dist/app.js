@@ -826,7 +826,13 @@ async function setLanguage(code, persist) {
   if (persist) {
     settings.uiLang = lang; saveSettings();
     const path = (I18N.languages.find(l => l.code === lang) || {}).path || '/';
-    if (location.pathname !== path && /^\/([a-z]{2}(-[a-z]{2})?\/)?$/.test(location.pathname)) history.replaceState(null, '', path + location.hash);
+    // Each locale has a crawlable, pre-rendered URL. Navigate to it instead of
+    // merely changing the address bar so visitors and search engines see the
+    // same language-specific document, canonical URL, and hreflang set.
+    if (location.pathname !== path && /^\/([a-z]{2}(-[a-z]{2})?\/)?$/.test(location.pathname)) {
+      location.assign(path + location.hash);
+      return;
+    }
   }
   applyI18n();
   if (!settings.speechLang) $('speech-language').value = speechLang();
