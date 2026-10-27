@@ -12,6 +12,7 @@
 "intro.h1": "免费在线提词器",
 "intro.h1em": "自然表达，自信录制。",
 "intro.p": "粘贴稿子，点击开始，让 CuePrompt 跟着你的声音滚动——打开浏览器就能用。",
+"flow.kicker": "一个流程，四步从容完成", "flow.title": "让下一步一目了然。", "flow.note": "从任意一步开始，所有内容只留在此设备。", "flow.write.title": "创作", "flow.write.copy": "模板、导入内容或草稿", "flow.write.cta": "开始写稿 ↗", "flow.read.title": "排练", "flow.read.copy": "跟随声音或自己的节奏", "flow.read.cta": "打开提词器 ↓", "flow.record.title": "录制", "flow.record.copy": "在浏览器中构图并录制", "flow.record.cta": "设置摄像头 ↓", "flow.publish.title": "发布", "flow.publish.copy": "文案、字幕和本地导出", "flow.publish.cta": "准备发布 ↗",
 "studio.title": "你的工作室",
 "studio.workspace": "个人空间",
 "save.saved": "已保存在本设备",

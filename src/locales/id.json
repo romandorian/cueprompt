@@ -12,6 +12,7 @@
 "intro.h1": "Teleprompter online gratis",
 "intro.h1em": "Bicara dengan alami. Rekam dengan percaya diri.",
 "intro.p": "Tempel naskah, tekan putar, dan biarkan CuePrompt mengikuti suara Anda, langsung di browser.",
+"flow.kicker": "SATU ALUR, EMPAT LANGKAH TENANG", "flow.title": "Buat langkah berikutnya menjadi jelas.", "flow.note": "Mulai dari mana saja. Pekerjaan Anda tetap di perangkat ini.", "flow.write.title": "Buat", "flow.write.copy": "Templat, impor, atau draf", "flow.write.cta": "Mulai naskah ↗", "flow.read.title": "Berlatih", "flow.read.copy": "Ikuti suara atau ritme Anda", "flow.read.cta": "Buka pembaca ↓", "flow.record.title": "Rekam", "flow.record.copy": "Atur pengambilan gambar di browser", "flow.record.cta": "Siapkan kamera ↓", "flow.publish.title": "Publikasikan", "flow.publish.copy": "Teks, takarir, dan ekspor lokal", "flow.publish.cta": "Siapkan rilis ↗",
 "studio.title": "Studio Anda",
 "studio.workspace": "RUANG KERJA PRIBADI",
 "save.saved": "Tersimpan di perangkat ini",

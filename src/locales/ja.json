@@ -12,6 +12,7 @@
 "intro.h1": "無料オンラインプロンプター",
 "intro.h1em": "自然に話して、自信を持って撮影。",
 "intro.p": "原稿を貼り付けて再生を押せば、CuePrompt があなたの声に合わせて進みます。すべてブラウザ内で完結。",
+"flow.kicker": "ひとつの流れ、落ち着いた4ステップ", "flow.title": "次にすることを明確に。", "flow.note": "どこからでも始められます。作業内容はこの端末だけに残ります。", "flow.write.title": "作成", "flow.write.copy": "テンプレート、インポート、下書き", "flow.write.cta": "原稿を始める ↗", "flow.read.title": "練習", "flow.read.copy": "声または自分のペースに合わせる", "flow.read.cta": "リーダーを開く ↓", "flow.record.title": "録画", "flow.record.copy": "ブラウザで構図を決めて録画", "flow.record.cta": "カメラを設定 ↓", "flow.publish.title": "公開", "flow.publish.copy": "投稿文、字幕、ローカル書き出し", "flow.publish.cta": "公開を準備 ↗",
 "studio.title": "あなたのスタジオ",
 "studio.workspace": "個人ワークスペース",
 "save.saved": "この端末に保存済み",

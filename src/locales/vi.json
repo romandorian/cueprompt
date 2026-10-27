@@ -12,6 +12,7 @@
 "intro.h1": "Máy nhắc chữ trực tuyến miễn phí",
 "intro.h1em": "Nói tự nhiên. Quay thật tự tin.",
 "intro.p": "Dán kịch bản, nhấn phát và để CuePrompt đi theo giọng nói của bạn, ngay trong trình duyệt.",
+"flow.kicker": "MỘT QUY TRÌNH, BỐN BƯỚC THẢNH THƠI", "flow.title": "Làm rõ hành động tiếp theo.", "flow.note": "Bắt đầu ở bất kỳ đâu. Công việc của bạn ở lại trên thiết bị này.", "flow.write.title": "Tạo", "flow.write.copy": "Mẫu, nội dung nhập hoặc bản nháp", "flow.write.cta": "Bắt đầu kịch bản ↗", "flow.read.title": "Luyện tập", "flow.read.copy": "Theo giọng nói hoặc nhịp độ của bạn", "flow.read.cta": "Mở trình đọc ↓", "flow.record.title": "Ghi hình", "flow.record.copy": "Canh khung hình trong trình duyệt", "flow.record.cta": "Thiết lập camera ↓", "flow.publish.title": "Xuất bản", "flow.publish.copy": "Nội dung đăng, phụ đề và xuất cục bộ", "flow.publish.cta": "Chuẩn bị phát hành ↗",
 "studio.title": "Studio của bạn",
 "studio.workspace": "KHÔNG GIAN CÁ NHÂN",
 "save.saved": "Đã lưu trên thiết bị này",

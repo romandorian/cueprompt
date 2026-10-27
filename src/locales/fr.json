@@ -12,6 +12,7 @@
 "intro.h1": "Prompteur en ligne gratuit",
 "intro.h1em": "Parlez naturellement. Enregistrez avec assurance.",
 "intro.p": "Collez votre script, lancez la lecture et laissez CuePrompt suivre votre voix, directement dans le navigateur.",
+"flow.kicker": "UN FLUX, QUATRE ÉTAPES SEREINES", "flow.title": "Rendez la prochaine action évidente.", "flow.note": "Commencez où vous voulez. Votre travail reste sur cet appareil.", "flow.write.title": "Créer", "flow.write.copy": "Modèle, import ou brouillon", "flow.write.cta": "Commencer un script ↗", "flow.read.title": "Répéter", "flow.read.copy": "Suivez votre voix ou votre rythme", "flow.read.cta": "Ouvrir le lecteur ↓", "flow.record.title": "Enregistrer", "flow.record.copy": "Cadrez votre prise dans le navigateur", "flow.record.cta": "Configurer la caméra ↓", "flow.publish.title": "Publier", "flow.publish.copy": "Texte, sous-titres et export local", "flow.publish.cta": "Préparer la publication ↗",
 "studio.title": "Votre studio",
 "studio.workspace": "ESPACE PERSONNEL",
 "save.saved": "Enregistré sur cet appareil",

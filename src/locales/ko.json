@@ -12,6 +12,7 @@
 "intro.h1": "무료 온라인 프롬프터",
 "intro.h1em": "자연스럽게 말하고, 자신 있게 녹화하세요.",
 "intro.p": "대본을 붙여 넣고 재생을 누르면 CuePrompt가 목소리를 따라갑니다. 모두 브라우저 안에서요.",
+"flow.kicker": "하나의 흐름, 차분한 네 단계", "flow.title": "다음 행동을 분명하게 만드세요.", "flow.note": "어디서나 시작할 수 있습니다. 작업은 이 기기에만 남습니다.", "flow.write.title": "작성", "flow.write.copy": "템플릿, 가져오기 또는 초안", "flow.write.cta": "스크립트 시작 ↗", "flow.read.title": "연습", "flow.read.copy": "목소리나 내 속도를 따르기", "flow.read.cta": "리더 열기 ↓", "flow.record.title": "녹화", "flow.record.copy": "브라우저에서 구도를 잡고 녹화", "flow.record.cta": "카메라 설정 ↓", "flow.publish.title": "게시", "flow.publish.copy": "문구, 자막 및 로컬 내보내기", "flow.publish.cta": "게시 준비 ↗",
 "studio.title": "나의 스튜디오",
 "studio.workspace": "개인 작업 공간",
 "save.saved": "이 기기에 저장됨",

@@ -12,6 +12,7 @@
 "intro.h1": "Teleprompter online gratis",
 "intro.h1em": "Habla con naturalidad. Graba con confianza.",
 "intro.p": "Pega tu guion, pulsa reproducir y deja que CuePrompt siga tu voz, directamente en el navegador.",
+"flow.kicker": "UN FLUJO, CUATRO PASOS TRANQUILOS", "flow.title": "Haz que el siguiente paso sea evidente.", "flow.note": "Empieza donde quieras. Tu trabajo se queda en este dispositivo.", "flow.write.title": "Crear", "flow.write.copy": "Plantilla, importación o borrador", "flow.write.cta": "Empezar un guion ↗", "flow.read.title": "Ensayar", "flow.read.copy": "Sigue tu voz o tu ritmo", "flow.read.cta": "Abrir lector ↓", "flow.record.title": "Grabar", "flow.record.copy": "Encuadra tu toma en el navegador", "flow.record.cta": "Configurar cámara ↓", "flow.publish.title": "Publicar", "flow.publish.copy": "Texto, subtítulos y exportación local", "flow.publish.cta": "Preparar publicación ↗",
 "studio.title": "Tu estudio",
 "studio.workspace": "ESPACIO PERSONAL",
 "save.saved": "Guardado en este dispositivo",

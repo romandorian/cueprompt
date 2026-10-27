@@ -12,6 +12,7 @@
 "intro.h1": "ملقّن نصوص مجاني عبر الإنترنت",
 "intro.h1em": "تحدّث بطبيعية. سجّل بثقة.",
 "intro.p": "الصق نصك واضغط تشغيل، وسيتبع CuePrompt صوتك مباشرة في المتصفح.",
+"flow.kicker": "مسار واحد، أربع خطوات هادئة", "flow.title": "اجعل الخطوة التالية واضحة.", "flow.note": "ابدأ من أي مكان. يبقى عملك على هذا الجهاز.", "flow.write.title": "إنشاء", "flow.write.copy": "قالب أو استيراد أو مسودة", "flow.write.cta": "ابدأ نصًا ↗", "flow.read.title": "تدرّب", "flow.read.copy": "اتبع صوتك أو إيقاعك", "flow.read.cta": "افتح القارئ ↓", "flow.record.title": "سجّل", "flow.record.copy": "اضبط اللقطة في المتصفح", "flow.record.cta": "إعداد الكاميرا ↓", "flow.publish.title": "انشر", "flow.publish.copy": "نص للنشر وترجمات وتصدير محلي", "flow.publish.cta": "حضّر للنشر ↗",
 "studio.title": "الاستوديو الخاص بك",
 "studio.workspace": "مساحة عمل شخصية",
 "save.saved": "محفوظ على هذا الجهاز",

@@ -12,6 +12,7 @@
 "intro.h1": "Kostenloser Online-Teleprompter",
 "intro.h1em": "Natürlich sprechen. Souverän aufnehmen.",
 "intro.p": "Skript einfügen, Start drücken und CuePrompt folgt deiner Stimme – direkt im Browser.",
+"flow.kicker": "EIN ABLAUF, VIER RUHIGE SCHRITTE", "flow.title": "Mach den nächsten Schritt offensichtlich.", "flow.note": "Starte überall. Deine Arbeit bleibt auf diesem Gerät.", "flow.write.title": "Erstellen", "flow.write.copy": "Vorlage, Import oder Entwurf", "flow.write.cta": "Skript beginnen ↗", "flow.read.title": "Üben", "flow.read.copy": "Folge deiner Stimme oder deinem Tempo", "flow.read.cta": "Leser öffnen ↓", "flow.record.title": "Aufnehmen", "flow.record.copy": "Rahme deine Aufnahme im Browser ein", "flow.record.cta": "Kamera einrichten ↓", "flow.publish.title": "Veröffentlichen", "flow.publish.copy": "Text, Untertitel und lokaler Export", "flow.publish.cta": "Veröffentlichung vorbereiten ↗",
 "studio.title": "Dein Studio",
 "studio.workspace": "PERSÖNLICHER BEREICH",
 "save.saved": "Auf diesem Gerät gespeichert",
