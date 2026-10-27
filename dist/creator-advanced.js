@@ -16,8 +16,31 @@
   // A typed endpoint is explicit: files are sent only by the user's upload action.
   function endpoint(id) { const u = new URL($(id).value); if (u.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(u.hostname)) throw new Error('Use an HTTPS service endpoint.'); if (u.username || u.password) throw new Error('Do not embed credentials in the URL.'); return u.href; }
   if ($('transcript')) {
-    document.querySelector('.hint').textContent = 'Paste a YouTube transcript or import TXT, MD, SRT or VTT (up to 5 MB). For pictures and recordings, use the tools below.';
-    inject(document.querySelector('.card'), `<details open><summary>Image → text · local OCR</summary><label>Image<input id="ocr-file" type="file" accept="image/png,image/jpeg,image/webp"></label><label>Text language<select id="ocr-language"><option value="eng">English</option><option value="chi_sim+eng">简体中文 + English</option></select></label><p class="hint">JPG, PNG or WebP, up to 10 MB. Printed text works best. Recognition runs on this device.</p><button id="ocr">Extract text from image</button></details><details><summary>Audio / video → transcript</summary><label>Recording<input id="speech-file" type="file" accept="audio/*,video/*"></label><label>Transcription endpoint<input id="speech-endpoint" type="url" placeholder="https://your-provider.example/v1/audio/transcriptions"></label><label>Model<input id="speech-model" placeholder="Model supported by your provider"></label><label>API key (kept in this tab only)<input id="speech-key" type="password" autocomplete="off"></label><label><input id="speech-consent" type="checkbox"> Send the selected recording to this service for transcription. Provider charges may apply.</label><p class="hint">Up to 25 MB. Requires a multipart transcription API with browser access (CORS). Choose a service that accepts your file format. URL fetching is not supported.</p><button id="transcribe">Upload & transcribe</button></details>`);
+    document.querySelector('.hint').textContent = 'Paste a YouTube transcript or import TXT, MD, SRT or VTT (up to 5 MB). For public webpages, pictures and recordings, use the import options below.';
+    inject(document.querySelector('.card'), `<details open><summary>Public webpage → editable draft</summary><label>Public page URL<input id="source-url" type="url" placeholder="https://example.com/article"></label><p class="hint">Reads a publicly accessible page in your browser only. The page must allow browser access (CORS). YouTube transcript fetching is blocked by YouTube; use its transcript panel, then paste the text above.</p><button id="import-url">Import readable page</button></details><details><summary>Image → text · local OCR</summary><label>Image<input id="ocr-file" type="file" accept="image/png,image/jpeg,image/webp"></label><label>Text language<select id="ocr-language"><option value="eng">English</option><option value="chi_sim+eng">简体中文 + English</option></select></label><p class="hint">JPG, PNG or WebP, up to 10 MB. Printed text works best. Recognition runs on this device.</p><button id="ocr">Extract text from image</button></details><details><summary>Audio / video → transcript</summary><label>Recording<input id="speech-file" type="file" accept="audio/*,video/*"></label><label>Transcript language<select id="speech-language"><option value="">Auto-detect</option><option value="en">English</option><option value="zh">Chinese</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option><option value="ja">Japanese</option><option value="ko">Korean</option></select></label><label>Transcription endpoint<input id="speech-endpoint" type="url" placeholder="https://your-provider.example/v1/audio/transcriptions"></label><label>Model<input id="speech-model" placeholder="Model supported by your provider"></label><label>API key (kept in this tab only)<input id="speech-key" type="password" autocomplete="off"></label><label><input id="speech-consent" type="checkbox"> Send the selected recording to this service for transcription. Provider charges may apply.</label><p class="hint">Up to 25 MB. Requires a multipart transcription API with browser access (CORS). The file is sent only after you confirm this checkbox. Ask your provider for a verbose JSON response to enable precise SRT captions.</p><button id="transcribe">Upload & transcribe</button></details>`);
+    $('import-url').onclick = () => job($('import-url'), async () => {
+      const url = endpoint('source-url'), host = new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+      if (/(^|\.)youtube\.com$|youtu\.be$/.test(host)) throw new Error('YouTube does not allow direct browser transcript import. Open the video transcript, copy it, then paste it into the transcript box.');
+      const controller = new AbortController(); stop = () => controller.abort();
+      message('Reading ' + host + ' in your browser…');
+      let response;
+      try { response = await fetch(url, {signal: controller.signal, headers: {Accept: 'text/html,text/plain;q=0.9'}}); }
+      catch (e) { if (e.name === 'AbortError') throw e; throw new Error('This site does not allow browser access (CORS). Copy the text and paste it above instead.'); }
+      if (!response.ok) throw new Error('The page returned ' + response.status + '. Check that the link is public.');
+      const source = await response.text();
+      if (source.length > 5 * 1024 * 1024) throw new Error('This page is too large to import. Copy the relevant text instead.');
+      const doc = new DOMParser().parseFromString(source, 'text/html');
+      doc.querySelectorAll('script,style,noscript,svg,nav,header,footer,aside,form,button,iframe').forEach(node => node.remove());
+      const root = doc.querySelector('article,main,[role="main"]') || doc.body;
+      // HTML pages are often minified into one source line. Insert readable
+      // boundaries before extracting text so headings, paragraphs and list items
+      // remain useful as a teleprompter draft.
+      root?.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,blockquote,pre,br').forEach(node => node.after(doc.createTextNode('\n\n')));
+      const text = (root?.textContent || '').replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
+      if (text.length < 80) throw new Error('No readable article text was found. Copy the transcript or page text and paste it above instead.');
+      result((doc.querySelector('meta[property="og:title"]')?.content || doc.title || host).trim().slice(0, 180), text.slice(0, 200000));
+      message('Page imported. Review quotes, headings and copyright before reading or publishing.');
+    });
     $('ocr').onclick = () => job($('ocr'), async () => {
       const file = $('ocr-file').files[0];
       if (!file || file.size > 10 * 1024 * 1024 || !/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Select a JPG, PNG or WebP image under 10 MB.');
@@ -43,6 +66,7 @@
       if (!key || !model) throw new Error('Enter the service API key and model.');
       const controller = new AbortController(); stop = () => controller.abort();
       const form = new FormData(); form.append('file', file); form.append('model', model); form.append('response_format', 'verbose_json');
+      if ($('speech-language').value) form.append('language', $('speech-language').value);
       message('Sending recording to ' + new URL(url).host + '…');
       const timer = setTimeout(() => controller.abort(), 180000);
       try {
