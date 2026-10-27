@@ -49,6 +49,12 @@
     const body = points.split('\n').filter(s=>s.trim()).map((s,i)=>`## ${headings[i] || (zh ? '补充要点' : 'Additional point')}\n${s.trim()}`).join('\n\n');
     output(topic, `## ${zh ? '开场' : 'Opening'}\n${openings[value('scene')]}\n\n[pause]\n\n${body}\n\n## ${zh ? '结束' : 'Closing'}\n[slow] ${action || (zh ? '感谢你的时间。我们下次见。' : 'Thanks for your time. See you next time.')}`);
   };
+  document.querySelectorAll('[data-template-scene]').forEach(card => card.onclick = () => {
+    if (!el('scene')) return;
+    el('scene').value = card.dataset.templateScene;
+    document.querySelectorAll('[data-template-scene]').forEach(item => item.classList.toggle('selected', item === card));
+    el('topic').focus({preventScroll:true}); el('topic').scrollIntoView({behavior:'smooth', block:'center'});
+  });
   if (el('clean')) {
     el('clean').onclick = () => { if (!value('transcript')) { status('Paste or import a transcript first.'); return; } output('Cleaned transcript', clean(value('transcript'))); };
     el('transcript-file').onchange = async event => {

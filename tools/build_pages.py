@@ -18,6 +18,14 @@ LANGS = [  # code, native name, dir, path, hreflang
     ('id', 'Bahasa Indonesia', 'ltr', '/id/', 'id'), ('vi', 'Tiếng Việt', 'ltr', '/vi/', 'vi'), ('th', 'ไทย', 'ltr', '/th/', 'th'),
 ]
 LANDING = ['teleprompter-for-youtube', 'teleprompter-for-presentations', 'teleprompter-with-camera']
+SCENE_GUIDES = {
+    'teleprompter-for-youtube-shorts': ('Teleprompter for YouTube Shorts', 'Create clear YouTube Shorts with a browser teleprompter, a 9:16 export preset and a local publishing pack.', 'YouTube Shorts, without losing your place.'),
+    'teleprompter-for-tiktok': ('Teleprompter for TikTok', 'Plan, rehearse and record TikTok videos with a private browser teleprompter and vertical export preset.', 'Say it naturally on TikTok.'),
+    'teleprompter-for-instagram-reels': ('Teleprompter for Instagram Reels', 'Use a browser teleprompter to script, record and export Instagram Reels without uploading your draft.', 'More eye contact for your next Reel.'),
+    'teleprompter-for-podcasts': ('Teleprompter for Podcasts', 'Create podcast openings, episode outlines and video-podcast scripts with a free browser teleprompter.', 'A steadier start to every episode.'),
+    'teleprompter-for-interviews': ('Teleprompter for Interviews', 'Prepare a confident self-introduction and interview answers with a private browser teleprompter.', 'Introduce yourself with clarity, not memorization.'),
+    'teleprompter-for-sales-video': ('Teleprompter for Sales Videos', 'Create product demos, sales videos and client walkthroughs with a browser teleprompter and publishing workflow.', 'Keep your sales message focused.'),
+}
 
 
 def load_locales():
@@ -81,6 +89,12 @@ def write(path, text):
         f.write(text)
 
 
+def guide_page(slug, title, description, headline):
+    url = f'{SITE}/{slug}/'
+    related = ''.join(f'<li><a href="/{s}/">{html.escape(t[0])}</a></li>' for s, t in SCENE_GUIDES.items() if s != slug)
+    return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)} | CuePrompt</title><meta name="description" content="{html.escape(description)}"><link rel="canonical" href="{url}"><meta property="og:title" content="{html.escape(title)} | CuePrompt"><meta property="og:description" content="{html.escape(description)}"><meta property="og:type" content="article"><meta property="og:url" content="{url}"><link rel="stylesheet" href="/style.css"><script type="application/ld+json">{{"@context":"https://schema.org","@type":"Article","headline":{json.dumps(headline)},"description":{json.dumps(description)},"mainEntityOfPage":{json.dumps(url)},"author":{{"@type":"Organization","name":"CuePrompt"}}}}</script></head><body><header class="header"><a class="brand" href="/">CuePrompt</a><a href="/#studio">Open studio ↗</a></header><main class="landing"><span class="eyebrow">CUEPROMPT CREATOR GUIDE</span><h1>{html.escape(headline)}</h1><p>{html.escape(description)}</p><a class="play-button" href="/script-templates/">Choose a script template →</a><h2>Write for the camera, not the page</h2><p>Start with one audience problem, one useful idea and one clear next step. Keep sentences short enough to say naturally, then use headings and pause markers to make the read easier.</p><h2>Rehearse in your own rhythm</h2><p>Keep the reading area close to your lens, adjust text size and speed, and use Smart Follow or steady scrolling. Your draft stays in this browser while you practice.</p><h2>Record and prepare the release</h2><p>Record a take, choose a platform export preset, then use the publishing assistant for copy, captions and a local release pack.</p><h2>More creator guides</h2><ul>{related}</ul><p><a href="/creator-guides/">Browse all guides</a> · <a href="/#studio">Open CuePrompt Studio</a></p></main><footer><a href="/">CuePrompt</a><span>© 2026 CuePrompt</span></footer></body></html>'''
+
+
 def main():
     subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'build_creator_tools.py')], check=True)
     dicts = load_locales()
@@ -106,6 +120,10 @@ def main():
                'return new Promise(function(res,rej){var s=document.createElement("script");s.src="/i18n/"+code+".js";'
                's.onload=function(){self.dicts[code]?res(self.dicts[code]):rej(new Error("missing "+code))};s.onerror=function(){rej(new Error("load "+code))};document.head.appendChild(s)})}};\n')
     write(os.path.join(DIST, 'i18n.js'), runtime)
+    for slug, (title, description, headline) in SCENE_GUIDES.items():
+        write(os.path.join(DIST, slug, 'index.html'), guide_page(slug, title, description, headline))
+    guide_links = ''.join(f'<li><a href="/{slug}/">{html.escape(title)}</a> — {html.escape(description)}</li>' for slug, (title, description, _) in SCENE_GUIDES.items())
+    write(os.path.join(DIST, 'creator-guides', 'index.html'), f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Creator Guides | CuePrompt</title><meta name="description" content="Practical teleprompter guides for short video, podcasts, interviews and sales videos."><link rel="canonical" href="{SITE}/creator-guides/"><link rel="stylesheet" href="/style.css"></head><body><header class="header"><a class="brand" href="/">CuePrompt</a><a href="/#studio">Open studio ↗</a></header><main class="landing"><span class="eyebrow">CUEPROMPT CREATOR GUIDES</span><h1>Speak naturally on every kind of camera.</h1><p>Practical starting points for creators who want to write, rehearse, record and publish with less friction.</p><ul>{guide_links}</ul><a class="play-button" href="/script-templates/">Start a script →</a></main><footer><a href="/">CuePrompt</a><span>© 2026 CuePrompt</span></footer></body></html>''')
     # hreflang on English-only landing pages (self + x-default)
     for slug in LANDING:
         p = os.path.join(DIST, slug, 'index.html')
@@ -121,6 +139,8 @@ def main():
     alt = ''.join(f'<xhtml:link rel="alternate" hreflang="{h}" href="{SITE}{p}"/>' for _, _, _, p, h in LANGS) + f'<xhtml:link rel="alternate" hreflang="x-default" href="{SITE}/"/>'
     urls = ''.join(f'<url><loc>{SITE}{p}</loc>{alt}</url>' for _, _, _, p, _ in LANGS)
     urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in LANDING)
+    urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in SCENE_GUIDES)
+    urls += f'<url><loc>{SITE}/creator-guides/</loc></url>'
     urls += ''.join(f'<url><loc>{SITE}/{slug}/</loc></url>' for slug in ['script-templates', 'script-extractor', 'publishing-assistant', 'video-converter'])
     write(os.path.join(DIST, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' + urls + '</urlset>\n')
     write(os.path.join(DIST, 'robots.txt'), f'User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n')
