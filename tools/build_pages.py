@@ -62,6 +62,10 @@ def bake(template, code, d, en):
     out = re.sub(r'<link rel="canonical" href="[^"]*">', f'<link rel="canonical" href="{url}">', out, count=1)
     out = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{url}">', out, count=1)
     out = re.sub(r'"url":"[^"]*"', f'"url":"{url}"', out, count=1)
+    # Keep machine-readable application data aligned with the visible language,
+    # rather than exposing an English-only description on localized pages.
+    out = out.replace('"description":"Free browser-based teleprompter with voice-follow scrolling, a local script library and video recording."',
+                      '"description":' + json.dumps(t('meta.description'), ensure_ascii=False) + ',"inLanguage":' + json.dumps(code) + ',"featureList":["Voice-follow scrolling","Browser video recording","Local script library","Fullscreen teleprompter"]')
     out = re.sub(r'<!-- hreflang:start -->.*?<!-- hreflang:end -->', hreflang_block(), out, flags=re.S)
     out = out.replace('<script src="/app.js" defer></script>', '<script src="/workflow.js" defer></script><script src="/app.js" defer></script><script src="/install.js" defer></script>')
     out = out.replace('</head>', '<link rel="manifest" href="/manifest.webmanifest"></head>')
