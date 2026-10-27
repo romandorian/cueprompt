@@ -41,5 +41,19 @@ window.CueWorkflow = (() => {
     return [Math.floor(n / 3600000), Math.floor(n / 60000) % 60, Math.floor(n / 1000) % 60].map(x => String(x).padStart(2, '0')).join(':') + ',' + String(n % 1000).padStart(3, '0');
   };
   function toSrt(segments) { return segments.map((s, i) => `${i + 1}\n${stamp(s.start)} --> ${stamp(s.end)}\n${s.text.trim()}\n`).join('\n'); }
-  return {loadScript, engine, download, stamp, toSrt, read:key => transfer('readonly', key), save:(key, value) => transfer('readwrite', key, value), remove:key => transfer('readwrite', key)};
+  // Small, dependency-free ZIP writer for text publishing packs. Files are
+  // stored (not compressed), which keeps the browser-only bundle predictable.
+  const crc32 = data => { let c = 0xffffffff; for (const b of data) { c ^= b; for (let i = 0; i < 8; i++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)); } return (c ^ 0xffffffff) >>> 0; };
+  const u16 = n => [n & 255, (n >>> 8) & 255], u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+  function zipText(files) {
+    const encoder = new TextEncoder(), entries = files.map(file => ({name: encoder.encode(file.name), data: encoder.encode(file.text), type:file.type || 'text/plain;charset=utf-8'}));
+    let offset = 0; const locals = [], central = [];
+    for (const file of entries) {
+      const crc = crc32(file.data), local = new Uint8Array([0x50,0x4b,0x03,0x04,20,0,0,0,0,0,0,0,0,0,...u32(crc),...u32(file.data.length),...u32(file.data.length),...u16(file.name.length),0,0,...file.name,...file.data]);
+      locals.push(local); central.push(new Uint8Array([0x50,0x4b,0x01,0x02,20,0,20,0,0,0,0,0,0,0,...u32(crc),...u32(file.data.length),...u32(file.data.length),...u16(file.name.length),0,0,0,0,0,0,0,0,0,0,...u32(offset),...file.name])); offset += local.length;
+    }
+    const centralSize = central.reduce((n, part) => n + part.length, 0), end = new Uint8Array([0x50,0x4b,0x05,0x06,0,0,0,0,...u16(entries.length),...u16(entries.length),...u32(centralSize),...u32(offset),0,0]);
+    return new Blob([...locals, ...central, end], {type:'application/zip'});
+  }
+  return {loadScript, engine, download, stamp, toSrt, zipText, read:key => transfer('readonly', key), save:(key, value) => transfer('readwrite', key, value), remove:key => transfer('readwrite', key)};
 })();

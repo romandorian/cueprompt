@@ -91,7 +91,7 @@
   };
   if ($('publish-script')) {
     try { const draft = await W.read('publish'); if (draft) { $('video-title').value = draft.title; $('publish-script').value = draft.text; } } catch { /* Manual paste remains available. */ }
-    inject(document.querySelector('.card'), `<details open><summary>Subtitle export</summary><p class="hint">Export timestamps from your last transcription, or create an estimated draft to adjust against your video. Estimated captions are not speech-aligned.</p><button id="timed-srt">Download last transcribed SRT</button><label>Video duration (seconds)<input id="caption-duration" type="number" min="1" max="14400" value="60"></label><button id="estimated-srt">Download estimated SRT draft</button></details>`);
+    inject(document.querySelector('.card'), `<details open><summary>Subtitle export</summary><p class="hint">Export timestamps from your last transcription, or create an estimated draft to adjust against your video. Estimated captions are not speech-aligned.</p><button id="timed-srt">Download last transcribed SRT</button><label>Video duration (seconds)<input id="caption-duration" type="number" min="1" max="14400" value="60"></label><button id="estimated-srt">Download estimated SRT draft</button></details><details open><summary>One-click publishing pack</summary><p class="hint">Downloads a local ZIP containing your title, description, tags, publishing checklist and the latest timed SRT when available. Video files are not added to the pack.</p><button id="download-pack">Download publishing pack (.zip)</button></details>`);
     $('timed-srt').onclick = async () => {
       try { const data = await W.read('captions'); if (!data?.segments?.length) return message('No timed transcript available. Transcribe the matching recording first.'); W.download(new Blob([W.toSrt(data.segments)], {type:'text/plain'}), 'transcribed-captions.srt'); message('Exported subtitles from: ' + data.title + '. Check they match this recording.'); } catch { message('Subtitle storage is unavailable.'); }
     };
@@ -104,6 +104,17 @@
       const chunks = lines.flatMap(s => s.match(/.{1,70}/gu) || []), total = chunks.reduce((n, s) => n + s.length, 0); let cursor = 0;
       const segments = chunks.map(s => { const start = cursor; cursor += duration * s.length / total; return {start, end:cursor, text:s}; });
       W.download(new Blob([W.toSrt(segments)], {type:'text/plain'}), 'estimated-captions-review-required.srt'); message('Estimated timing only. Review and align before publishing.');
+    };
+    $('download-pack').onclick = async () => {
+      const title = $('video-title').value.trim(), pack = $('result').value.trim();
+      if (!title || !pack) return message('Build publishing copy first, then download the pack.');
+      const safe = title.replace(/[^\p{L}\p{N}_-]/gu, '-').replace(/-+/g, '-').slice(0, 80) || 'cueprompt-release';
+      const files = [
+        {name: safe + '-publishing-copy.txt', text: pack + '\n'},
+        {name: 'README.txt', text: 'CuePrompt publishing pack\n\n1. Review the title, description and tags.\n2. Upload your checked video manually.\n3. Upload captions when an SRT file is included.\n4. Confirm platform visibility, thumbnail, links and music rights.\n'}
+      ];
+      try { const captions = await W.read('captions'); if (captions?.segments?.length) files.push({name: safe + '-captions.srt', text: W.toSrt(captions.segments)}); W.download(W.zipText(files), safe + '-publishing-pack.zip'); message('Publishing pack downloaded locally' + (files.length > 2 ? ' with timed SRT.' : '. No timed SRT was available.')); }
+      catch { message('Could not create the publishing pack. Try downloading the copy and SRT separately.'); }
     };
   }
 })();
