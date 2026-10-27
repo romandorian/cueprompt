@@ -14,7 +14,7 @@ Open http://localhost:5173. Camera, microphone and speech recognition need `loca
 
 ## Features
 
-- **Creator tools:** `/script-templates/` builds eight scene-specific speaking formats in English or Simplified Chinese. `/script-extractor/` cleans TXT/MD/SRT/VTT, performs local English/Simplified Chinese image OCR, and supports optional multipart API transcription using a user-supplied endpoint, model and tab-only key. The transcription service must support browser CORS and verbose JSON responses. Only this explicitly selected remote operation uploads the recording; it may incur provider charges. URL extraction is not implemented.
+- **Creator tools:** `/script-templates/` builds eight scene-specific speaking formats in English or Simplified Chinese. `/script-extractor/` cleans TXT/MD/SRT/VTT, imports public webpages when their server permits browser CORS, performs local English/Simplified Chinese image OCR, and supports optional multipart API transcription using a user-supplied endpoint, model and tab-only key. YouTube transcript import is intentionally guided to the platform's copy-transcript flow. The transcription service must support browser CORS and verbose JSON responses. Only this explicitly selected remote operation uploads the recording; it may incur provider charges.
 - **Workflow:** extracted drafts can open the existing AI writer in rewrite mode; no AI request is made automatically. The recording review offers a local IndexedDB handoff to `/video-converter/`. The studio also passes its script into `/publishing-assistant/`, which exports publishing copy, timestamped transcription SRT, or clearly labelled estimated SRT drafts. Estimated subtitles must be aligned before publishing. Transcription captions are labelled with their source recording.
 - **Local video processing:** vendored single-thread ffmpeg.wasm, MP4/H.264 or WebM/VP8, original/portrait/landscape fit-with-padding presets, selectable quality, progress, cancellation, size comparison and playback before download. 150 MB input soft limit; output may be larger, and memory/performance depend on the device. Latest studio recording is held locally in IndexedDB, separate from the script library. No cloud sync or accounts have been added.
 - **Install/offline:** web manifest and service worker cache the studio shell and visited language bundles. Offline reading requires a successful initial online visit. AI and service transcription require a network connection; OCR/video tools are not promised offline. Updates are network-first. Generated tool pages are maintained by `tools/build_creator_tools.py`, called by the main build. Vendored dependencies and source links are documented in `dist/vendor/creator/NOTICE.md`.
@@ -83,11 +83,15 @@ CUEPROMPT_SITE=https://your.domain python3 tools/build_pages.py   # for a custom
 
 ## Deploy
 
-- Upload **only `dist/`** as the site root (ChatGPT Sites or any static host). `src/` and `tools/` are not deployed.
+- Upload **only `dist/`** as the site root (Cloudflare Workers/Pages or any static host). `src/` and `tools/` are not deployed.
 - Pages use root-relative paths (`/app.js`, `/vendor/...`), so serve from the domain root.
 - When moving to a custom domain, rebuild with `CUEPROMPT_SITE`. The build updates canonical, og:url, JSON-LD, hreflang and the sitemap.
 - Also update the URLs in the 3 English landing pages and `robots.txt`, then submit the sitemap in Google Search Console (and Baidu/Bing webmaster tools if you want them).
 - The hosted preview must be public to be indexed.
+
+### Cloudflare Worker deployment
+
+The deployed Worker is available at `https://cueprompt.romandorian068.workers.dev/`. In Cloudflare, open **Workers & Pages → cueprompt → Domains**, choose **Add domain**, and attach `cueprompt.io`; add `www.cueprompt.io` only if you plan to redirect it to the apex. After Cloudflare reports the domain active, verify `https://cueprompt.io/robots.txt` and `https://cueprompt.io/sitemap.xml`, then add the property to Google Search Console and submit the sitemap. The production bundle should always be rebuilt with `CUEPROMPT_SITE=https://cueprompt.io` before upload.
 
 ## Tests
 

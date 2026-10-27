@@ -9,7 +9,7 @@ import html, json, os, re, sys, subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, DIST = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'dist')
-SITE = os.environ.get('CUEPROMPT_SITE', 'https://cueprompt-studio.mauvejay6.chatgpt.site').rstrip('/')
+SITE = os.environ.get('CUEPROMPT_SITE', 'https://cueprompt.io').rstrip('/')
 LANGS = [  # code, native name, dir, path, hreflang
     ('en', 'English', 'ltr', '/', 'en'), ('zh-CN', '简体中文', 'ltr', '/zh/', 'zh-CN'), ('zh-TW', '繁體中文', 'ltr', '/zh-tw/', 'zh-TW'),
     ('es', 'Español', 'ltr', '/es/', 'es'), ('pt', 'Português', 'ltr', '/pt/', 'pt'), ('fr', 'Français', 'ltr', '/fr/', 'fr'),

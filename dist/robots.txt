@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://cueprompt-studio.mauvejay6.chatgpt.site/sitemap.xml
+Sitemap: https://cueprompt.io/sitemap.xml
