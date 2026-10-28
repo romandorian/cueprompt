@@ -207,7 +207,7 @@
 "lib.badBackup": "这不是 CuePrompt 的备份文件。",
 "ai.title": "AI 写稿",
 "ai.badge": "使用自己的密钥",
-"ai.intro": "支持任何 OpenAI 兼容接口，使用你自己的密钥。请求直接从你的浏览器发往服务商，密钥只保存在这个浏览器里。CuePrompt 不内置也不接收任何密钥。",
+"ai.intro": "可选择通义千问、DeepSeek、OpenAI、Claude 或其他兼容接口。请求直接从浏览器发往所选服务商，密钥只保存在这个浏览器里。",
 "ai.settings": "连接设置",
 "ai.baseUrl": "接口地址（Base URL）",
 "ai.model": "模型",
@@ -248,5 +248,5 @@
 "ai.pDashscope": "阿里云通义千问（DashScope，中国内地）",
 "ai.pDashscopeIntl": "阿里云通义千问（DashScope，国际站）",
 "ai.pCustom": "其他 OpenAI 兼容接口",
-"ai.corsNote": "在阿里云百炼（DashScope）控制台获取密钥。DashScope 支持直接从浏览器调用；其他服务商可能会拦截浏览器请求（CORS），需要另配一个小型代理。"
+"ai.corsNote": "请使用所选服务商的 API Key；ChatGPT 或 Claude 订阅账号不是 API Key。部分服务商可能拦截浏览器请求（CORS），需要另配一个小型代理。"
 }

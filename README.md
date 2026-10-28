@@ -77,15 +77,17 @@ dist/                 the deployable static site
 After changing `src/` or any locale, run:
 
 ```sh
-python3 tools/build_pages.py               # fails on keys missing from en.json; prints per-language gaps
-CUEPROMPT_SITE=https://your.domain python3 tools/build_pages.py   # for a custom domain
+python3 tools/build_pages.py               # production build for https://cueprompt.io
+CUEPROMPT_SITE=https://your.domain python3 tools/build_pages.py   # intentional custom-domain build
 ```
+
+`CUEPROMPT_SITE` must be an HTTPS origin (no path, query or fragment). The source template also uses `https://cueprompt.io/` as its fallback metadata, so an ordinary build cannot restore the former preview-domain canonical URLs.
 
 ## Deploy
 
 - Upload **only `dist/`** as the site root (Cloudflare Workers/Pages or any static host). `src/` and `tools/` are not deployed.
 - Pages use root-relative paths (`/app.js`, `/vendor/...`), so serve from the domain root.
-- When moving to a custom domain, rebuild with `CUEPROMPT_SITE`. The build updates canonical, og:url, JSON-LD, hreflang and the sitemap.
+- When moving to a custom domain, rebuild with `CUEPROMPT_SITE`. The build updates canonical, og:url, JSON-LD, hreflang and the sitemap. Do not deploy a custom-domain build to production.
 - Also update the URLs in the 3 English landing pages and `robots.txt`, then submit the sitemap in Google Search Console (and Baidu/Bing webmaster tools if you want them).
 - The hosted preview must be public to be indexed.
 

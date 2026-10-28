@@ -207,7 +207,7 @@
 "lib.badBackup": "這不是 CuePrompt 的備份檔案。",
 "ai.title": "AI 寫稿",
 "ai.badge": "使用自己的金鑰",
-"ai.intro": "支援任何 OpenAI 相容介面，使用你自己的金鑰。請求直接從你的瀏覽器發往服務商，金鑰只儲存在這個瀏覽器裡。CuePrompt 不內建也不接收任何金鑰。",
+"ai.intro": "可選擇通義千問、DeepSeek、OpenAI、Claude 或其他相容介面。請求直接從瀏覽器發往所選服務商，金鑰只儲存在這個瀏覽器裡。",
 "ai.settings": "連線設定",
 "ai.baseUrl": "介面地址（Base URL）",
 "ai.model": "模型",
@@ -248,5 +248,5 @@
 "ai.pDashscope": "阿里雲通義千問（DashScope，中國大陸）",
 "ai.pDashscopeIntl": "阿里雲通義千問（DashScope，國際站）",
 "ai.pCustom": "其他 OpenAI 相容介面",
-"ai.corsNote": "在阿里雲百鍊（DashScope）控制檯獲取金鑰。DashScope 支援直接從瀏覽器呼叫；其他服務商可能會攔截瀏覽器請求（CORS），需要另配一個小型代理。"
+"ai.corsNote": "請使用所選服務商的 API Key；ChatGPT 或 Claude 訂閱帳號不是 API Key。部分服務商可能攔截瀏覽器請求（CORS），需要另配一個小型代理。"
 }

@@ -57,3 +57,23 @@ window.CueWorkflow = (() => {
   }
   return {loadScript, engine, download, stamp, toSrt, zipText, read:key => transfer('readonly', key), save:(key, value) => transfer('readwrite', key, value), remove:key => transfer('readwrite', key)};
 })();
+
+/* Localized custom file controls. The native picker text follows the browser
+   UI language, so pages render their own button and file-name labels. Wiring
+   is delegated because some fields are injected after this script runs. */
+(() => {
+  document.addEventListener('click', event => {
+    const button = event.target.closest?.('.file-field button[id$="-button"]');
+    if (!button) return;
+    const input = document.getElementById(button.id.slice(0, -'-button'.length));
+    if (input && input.type === 'file') input.click();
+  });
+  document.addEventListener('change', event => {
+    const input = event.target;
+    if (!input.closest?.('.file-field') || input.type !== 'file') return;
+    const name = document.getElementById(input.id + '-name');
+    if (!name) return;
+    if (!name.dataset.empty) name.dataset.empty = name.textContent;
+    name.textContent = input.files[0] ? input.files[0].name : name.dataset.empty;
+  });
+})();

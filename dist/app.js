@@ -703,8 +703,20 @@ $('close-review').onclick = () => closeReview(false);
 $('review-dialog').addEventListener('cancel', e => { e.preventDefault(); closeReview(false); });
 
 /* ---------- AI writer (bring your own key) ---------- */
-const AI_PRESETS = { dashscope: 'https://dashscope.aliyuncs.com/compatible-mode/v1', dashscopeIntl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' };
-const ai = Object.assign({ base: AI_PRESETS.dashscope, model: 'qwen-plus', key: '' }, store.get('cueprompt-ai', {}));
+const AI_PRESETS = {
+  dashscope: { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus', protocol: 'openai' },
+  dashscopeIntl: { base: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus', protocol: 'openai' },
+  deepseek: { base: 'https://api.deepseek.com', model: 'deepseek-flash', protocol: 'openai' },
+  openai: { base: 'https://api.openai.com/v1', model: 'gpt-4.1-mini', protocol: 'openai' },
+  anthropic: { base: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5', protocol: 'anthropic' }
+};
+const aiPresetOrder = ['openai', 'anthropic', 'deepseek', 'dashscope', 'dashscopeIntl', 'custom'];
+const aiPresetSelect = $('ai-preset');
+for (const value of aiPresetOrder) {
+  const option = aiPresetSelect.querySelector(`option[value="${value}"]`);
+  if (option) aiPresetSelect.append(option);
+}
+const ai = Object.assign({ base: AI_PRESETS.dashscope.base, model: 'qwen-plus', key: '', protocol: 'openai' }, store.get('cueprompt-ai', {}));
 const AI_LANGS = [['English', 'English'], ['Simplified Chinese', '简体中文'], ['Traditional Chinese', '繁體中文'], ['Spanish', 'Español'], ['Portuguese', 'Português'], ['French', 'Français'], ['German', 'Deutsch'], ['Italian', 'Italiano'], ['Japanese', '日本語'], ['Korean', '한국어'], ['Russian', 'Русский'], ['Arabic', 'العربية'], ['Hindi', 'हिन्दी'], ['Indonesian', 'Bahasa Indonesia'], ['Vietnamese', 'Tiếng Việt'], ['Thai', 'ไทย'], ['Turkish', 'Türkçe'], ['Dutch', 'Nederlands'], ['Polish', 'Polski']];
 const UI_TO_AI = { en: 'English', 'zh-CN': 'Simplified Chinese', 'zh-TW': 'Traditional Chinese', es: 'Spanish', pt: 'Portuguese', fr: 'French', de: 'German', ja: 'Japanese', ko: 'Korean', ru: 'Russian', ar: 'Arabic', hi: 'Hindi', id: 'Indonesian', vi: 'Vietnamese', th: 'Thai' };
 let aiTab = 'generate';
@@ -718,10 +730,10 @@ function openAi() {
   $('ai-connection').open = !ai.key; $('ai-error').hidden = true;
   $('ai-dialog').showModal();
 }
-function saveAi() { ai.base = $('ai-base').value.trim(); ai.model = $('ai-model').value.trim(); ai.key = $('ai-key').value.trim(); store.set('cueprompt-ai', ai); }
+function saveAi() { ai.base = $('ai-base').value.trim(); ai.model = $('ai-model').value.trim(); ai.key = $('ai-key').value.trim(); ai.protocol = AI_PRESETS[$('ai-preset').value]?.protocol || 'openai'; store.set('cueprompt-ai', ai); }
 for (const id of ['ai-base', 'ai-model', 'ai-key']) $(id).addEventListener('change', saveAi);
-function presetFor(base) { return base === AI_PRESETS.dashscope ? 'dashscope' : base === AI_PRESETS.dashscopeIntl ? 'dashscopeIntl' : 'custom'; }
-$('ai-preset').onchange = () => { const v = $('ai-preset').value; if (v === 'custom') { if (Object.values(AI_PRESETS).includes($('ai-base').value)) $('ai-base').value = ''; $('ai-base').focus(); } else { $('ai-base').value = AI_PRESETS[v]; if (!/^qwen/.test($('ai-model').value)) $('ai-model').value = 'qwen-plus'; } saveAi(); };
+function presetFor(base) { return Object.entries(AI_PRESETS).find(([, p]) => p.base === base)?.[0] || 'custom'; }
+$('ai-preset').onchange = () => { const v = $('ai-preset').value, preset = AI_PRESETS[v]; if (!preset) { if (presetFor($('ai-base').value) !== 'custom') $('ai-base').value = ''; $('ai-base').focus(); } else { $('ai-base').value = preset.base; $('ai-model').value = preset.model; } saveAi(); };
 $('ai-base').addEventListener('input', () => { $('ai-preset').value = presetFor($('ai-base').value.trim()); });
 $('ai-forget').onclick = () => { $('ai-key').value = ''; saveAi(); };
 $('ai-button').onclick = openAi; $('close-ai').onclick = () => $('ai-dialog').close();
@@ -757,11 +769,19 @@ $('ai-run').onclick = async () => {
   const btn = $('ai-run'); btn.disabled = true; btn.lastElementChild.textContent = t('ai.running');
   try {
     let res;
-    try { res = await fetch(ai.base.replace(/\/+$/, '') + '/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ai.key }, body: JSON.stringify({ model: ai.model, messages, temperature: 0.7 }) }); }
-    catch { fail(t('ai.errorCors')); return; }
+    try {
+      if (ai.protocol === 'anthropic') {
+        const system = messages.find(m => m.role === 'system')?.content || '';
+        const userMessages = messages.filter(m => m.role !== 'system');
+        res = await fetch(ai.base.replace(/\/+$/, '') + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': ai.key, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: ai.model, system, messages: userMessages, max_tokens: 2400, temperature: 0.7 }) });
+      } else {
+        res = await fetch(ai.base.replace(/\/+$/, '') + '/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ai.key }, body: JSON.stringify({ model: ai.model, messages, temperature: 0.7 }) });
+      }
+    }
+    catch { fail(ai.protocol === 'anthropic' ? 'Claude’s direct API blocks browser requests. Use a CORS-enabled proxy as the Base URL, or choose another provider.' : t('ai.errorCors')); return; }
     let data = null; try { data = await res.json(); } catch { }
     if (!res.ok) { fail(t('ai.errorHttp', { msg: (data && (data.error?.message || data.message)) || res.status + ' ' + res.statusText })); return; }
-    let text = data?.choices?.[0]?.message?.content || '';
+    let text = ai.protocol === 'anthropic' ? (data?.content || []).filter(part => part.type === 'text').map(part => part.text).join('\n') : (data?.choices?.[0]?.message?.content || '');
     text = text.replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
     if (!text) { fail(t('ai.empty')); return; }
     $('ai-result').value = text; $('ai-result-wrap').hidden = false;
@@ -772,6 +792,30 @@ $('ai-new').onclick = () => { const first = $('ai-result').value.split('\n').fin
 
 /* ---------- help & keyboard ---------- */
 $('help').onclick = () => $('help-dialog').showModal(); $('close-help').onclick = () => $('help-dialog').close();
+function feedbackEmailBody() {
+  const message = $('feedback-message').value.trim();
+  const ja = document.documentElement.lang === 'ja';
+  if (!message) { toast(ja ? '送信前にフィードバックを入力してください。' : 'Please add your feedback before sending.'); $('feedback-message').focus(); return null; }
+  const lines = [
+    'Feedback type: ' + $('feedback-type').value,
+    '',
+    message,
+    '',
+    'Reply email: ' + ($('feedback-email').value.trim() || 'Not provided')
+  ];
+  if ($('feedback-context').checked) {
+    lines.push('', 'Technical context (shared by choice):', 'Page: ' + location.href, 'Browser: ' + navigator.userAgent);
+  }
+  return lines.join('\n');
+}
+$('feedback-button').onclick = () => $('feedback-dialog').showModal();
+$('close-feedback').onclick = () => $('feedback-dialog').close();
+$('feedback-send').onclick = () => {
+  const body = feedbackEmailBody(); if (!body) return;
+  const subject = '[CuePrompt feedback] ' + $('feedback-type').value;
+  location.href = 'mailto:support@cueprompt.io?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  toast(document.documentElement.lang === 'ja' ? 'フィードバックを入力したメールアプリが開きます。' : 'Your email app should open with your feedback ready to send.');
+};
 for (const d of document.querySelectorAll('dialog')) d.addEventListener('click', e => { if (e.target === d && d.id !== 'review-dialog') d.close(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('prompter').classList.contains('pseudo-fullscreen')) { setFullscreenState(false, true); return; }
@@ -809,8 +853,8 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
-  document.querySelectorAll('[data-i18n-content]').forEach(el => { el.setAttribute('content', t(el.dataset.i18nContent)); });
-  document.title = t('meta.title');
+  // SEO metadata belongs to the static locale document. Changing UI copy
+  // must not make title/description disagree with its canonical URL.
   $('enter-reading').lastChild.textContent = ' ' + readingUi('start');
   document.querySelector('.reading-console-title small').textContent = readingUi('mode');
   $('ui-language').value = lang;
@@ -846,9 +890,13 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
   $('speed').value = settings.speed; $('font-size').value = settings.size; $('mirror').checked = settings.mirror;
   $('resolution').value = settings.resolution; $('rec-format').value = settings.format; $('countdown-toggle').checked = settings.countdown; $('mirror-camera').checked = settings.mirrorCamera;
   const pageLang = document.documentElement.dataset.locale || 'en';
-  // English is the predictable default on the root page. An explicit language URL and a
-  // visitor's deliberate previous choice still win, so shared localized links keep working.
-  const initial = pageLang !== 'en' ? pageLang : (settings.uiLang || 'en');
+  // Explicit locale paths win. On a first visit to /, use the browser's
+  // preferred language and navigate to its pre-rendered static document.
+  const initial = pageLang !== 'en' ? pageLang : (settings.uiLang || detectLanguage());
+  if (pageLang === 'en' && location.pathname === '/' && initial !== 'en') {
+    const target = I18N.languages.find(l => l.code === initial);
+    if (target) { location.replace(target.path + location.hash); return; }
+  }
   lang = initial; dict = I18N.dicts[initial] || I18N.dicts.en;
   initLibrary();
   $('script').value = current().text; $('script-title').value = current().title;

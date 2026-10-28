@@ -1,3 +1,0 @@
-Tool: built-in image_gen
-Use case: logo-brand
-Prompt: Silver Apple MacBook-style open laptop, nearly front-facing, with a full-screen forest-green teleprompter. Five white script bars, one mint highlighted reading line, and a triangular reading pointer. Minimal polished website logo, compact centered silhouette, transparent background, matching CuePrompt's green palette. No external wordmark, watermark, desk, or surrounding scene.

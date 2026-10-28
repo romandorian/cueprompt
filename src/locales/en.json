@@ -221,7 +221,7 @@
 "lib.badBackup": "This file isn't a CuePrompt backup.",
 "ai.title": "AI writer",
 "ai.badge": "Bring your own key",
-"ai.intro": "Works with any OpenAI-compatible API and your own key. Requests go directly from your browser to that provider, and the key is stored only in this browser. CuePrompt doesn't include or receive any key.",
+"ai.intro": "Choose Qwen, DeepSeek, OpenAI, Claude, or another compatible API. Requests go directly from your browser to that provider, and the key stays only in this browser.",
 "ai.settings": "Connection",
 "ai.baseUrl": "Base URL",
 "ai.model": "Model",
@@ -262,5 +262,5 @@
 "ai.pDashscope": "Alibaba Qwen (DashScope, mainland China)",
 "ai.pDashscopeIntl": "Alibaba Qwen (DashScope, international)",
 "ai.pCustom": "Other OpenAI-compatible API",
-"ai.corsNote": "Get a key in the Alibaba Cloud Model Studio (DashScope) console. DashScope accepts requests sent directly from the browser; other providers may block them (CORS) and would need a small proxy."
+"ai.corsNote": "Use an API key from the provider you select — a ChatGPT or Claude subscription login is not an API key. Some providers may block browser requests (CORS) and need a small proxy."
 }

@@ -1,0 +1,38 @@
+{
+  "en": {
+    "script-templates": ["Script Template Builder", "Build a speaking script you can rehearse immediately."],
+    "script-extractor": ["Transcript Cleaner", "Turn source text into an editable speaking script."],
+    "publishing-assistant": ["Publishing Checklist & Copy Builder", "Prepare publishing copy from your script."],
+    "video-converter": ["Local Video Compressor & Converter", "Compress and convert a recording on your device."],
+    "creator-guides": ["Creator Guides", "Practical teleprompter guides for creators."],
+    "privacy": ["Privacy Policy", "How CuePrompt handles your data."],
+    "terms": ["Terms of Service", "Terms for using CuePrompt."],
+    "teleprompter-for-youtube": ["Teleprompter for YouTube", "Record clearer YouTube videos."],
+    "teleprompter-for-presentations": ["Teleprompter for Presentations", "Practice presentations with confidence."],
+    "teleprompter-with-camera": ["Teleprompter with Camera", "Read and record in one browser."],
+    "teleprompter-for-youtube-shorts": ["Teleprompter for YouTube Shorts", "Keep your Shorts on script."],
+    "teleprompter-for-tiktok": ["Teleprompter for TikTok", "Plan and record TikTok videos."],
+    "teleprompter-for-instagram-reels": ["Teleprompter for Instagram Reels", "Script and record Reels privately."],
+    "teleprompter-for-podcasts": ["Teleprompter for Podcasts", "Create clear podcast openings."],
+    "teleprompter-for-interviews": ["Teleprompter for Interviews", "Prepare confident interview answers."],
+    "teleprompter-for-sales-video": ["Teleprompter for Sales Videos", "Keep sales videos focused."]
+  },
+  "zh-CN": {
+    "script-templates": ["口播脚本模板", "快速生成可直接排练的口播脚本。"],
+    "script-extractor": ["转录稿清理工具", "将原始文本整理为可编辑的口播稿。"],
+    "publishing-assistant": ["发布清单与文案生成器", "根据脚本准备发布文案。"],
+    "video-converter": ["本地视频压缩与转换", "在设备上压缩和转换录制视频。"],
+    "creator-guides": ["创作者指南", "面向创作者的实用提词器指南。"],
+    "privacy": ["隐私政策", "了解 CuePrompt 如何处理你的数据。"],
+    "terms": ["服务条款", "使用 CuePrompt 的服务条款。"],
+    "teleprompter-for-youtube": ["YouTube 提词器", "更清晰地录制 YouTube 视频。"],
+    "teleprompter-for-presentations": ["演讲提词器", "更自信地练习演讲。"],
+    "teleprompter-with-camera": ["带摄像头的提词器", "在同一个浏览器中阅读并录制。"],
+    "teleprompter-for-youtube-shorts": ["YouTube Shorts 提词器", "让短视频表达更流畅。"],
+    "teleprompter-for-tiktok": ["TikTok 提词器", "规划并录制 TikTok 视频。"],
+    "teleprompter-for-instagram-reels": ["Instagram Reels 提词器", "私密地写稿并录制 Reels。"],
+    "teleprompter-for-podcasts": ["播客提词器", "创作清晰的播客开场。"],
+    "teleprompter-for-interviews": ["面试提词器", "准备更自信的面试回答。"],
+    "teleprompter-for-sales-video": ["销售视频提词器", "让销售视频表达更聚焦。"]
+  }
+}
