@@ -248,5 +248,10 @@
 "ai.pDashscope": "Alibaba Qwen (DashScope, материковый Китай)",
 "ai.pDashscopeIntl": "Alibaba Qwen (DashScope, международный)",
 "ai.pCustom": "Другой OpenAI-совместимый API",
-"ai.corsNote": "Ключ можно получить в консоли Alibaba Cloud Model Studio (DashScope). DashScope принимает запросы напрямую из браузера; другие провайдеры могут их блокировать (CORS), и тогда понадобится небольшой прокси."
+"ai.corsNote": "Ключ можно получить в консоли Alibaba Cloud Model Studio (DashScope). DashScope принимает запросы напрямую из браузера; другие провайдеры могут их блокировать (CORS), и тогда понадобится небольшой прокси.",
+"compat.badge": "КОМПЬЮТЕР · ТЕЛЕФОН · БЕЗ УСТАНОВКИ",
+"compat.title": "Работает на компьютере и телефоне",
+"compat.copy": "Откройте CuePrompt в браузере и начните. Скачивать приложение или создавать аккаунт не нужно.",
+"pip.button": "Плавающий ридер",
+"pip.unsupported": "Плавающий ридер требует Chrome или Edge на компьютере через HTTPS."
 }

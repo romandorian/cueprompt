@@ -39,12 +39,17 @@ const store = {
 const readingConsole = document.createElement('div');
 readingConsole.className = 'reading-console'; readingConsole.id = 'reading-console';
 readingConsole.setAttribute('aria-label', 'Reading mode controls');
-readingConsole.innerHTML = '<span class="reading-console-title">CuePrompt <small>READING MODE</small></span><span class="reading-console-status" id="reading-console-status">READY</span><div class="reading-console-actions"><button id="reading-smaller-text" aria-label="Smaller text">A−</button><button id="reading-larger-text" aria-label="Larger text">A+</button><button id="reading-slower" aria-label="Slower">−</button><span class="fs-speed" id="reading-speed">40</span><button id="reading-faster" aria-label="Faster">+</button><button id="reading-play" class="fs-play" aria-label="Play or pause">▶</button><button id="reading-record" class="fs-record" aria-label="Start or stop recording" hidden>● REC</button><button id="reading-exit" aria-label="Exit reading mode">✕</button></div>';
+readingConsole.innerHTML = '<span class="reading-console-title">CuePrompt <small>READING MODE</small></span><span class="reading-console-status" id="reading-console-status">READY</span><div class="reading-console-actions"><button id="reading-smaller-text" aria-label="Smaller text">A−</button><button id="reading-larger-text" aria-label="Larger text">A+</button><button id="reading-slower" aria-label="Slower">−</button><span class="fs-speed" id="reading-speed">40</span><button id="reading-faster" aria-label="Faster">+</button><button id="reading-play" class="fs-play" aria-label="Play or pause">▶</button><button id="reading-float" class="reading-float" aria-label="Floating reader" title="Floating reader"><span aria-hidden="true">◲</span><span id="reading-float-label">Floating reader</span></button><button id="reading-record" class="fs-record" aria-label="Start or stop recording" hidden>● REC</button><button id="reading-exit" aria-label="Exit reading mode">✕</button></div>';
 $('prompter').append(readingConsole);
 const readingButton = document.createElement('button');
 readingButton.id = 'enter-reading'; readingButton.className = 'reading-button'; readingButton.setAttribute('aria-label', 'Open reading mode');
 readingButton.innerHTML = '<span>⛶</span> Start reading';
 $('play').before(readingButton);
+const floatingButton = document.createElement('button');
+floatingButton.id = 'floating-reader'; floatingButton.className = 'floating-reader-button';
+floatingButton.dataset.i18nAria = 'pip.button'; floatingButton.setAttribute('aria-label', 'Floating reader');
+floatingButton.innerHTML = '<span aria-hidden="true">◲</span> <span data-i18n="pip.button">Floating reader</span>';
+readingButton.before(floatingButton);
 const legacy = store.get('cueprompt-v1', null);
 const settings = Object.assign({ speed: 40, size: 36, mirror: false, mode: 'steady', speechLang: '', uiLang: '', camera: '', mic: '', resolution: 'auto', format: 'auto', countdown: true, mirrorCamera: true },
   legacy && typeof legacy === 'object' ? { speed: legacy.speed || 40, size: legacy.size || 36, mirror: !!legacy.mirror } : {},
@@ -233,6 +238,67 @@ document.addEventListener('click', e => { if (!$('sections-menu').hidden && !e.t
 /* ---------- toast ---------- */
 let toastTimer;
 function toast(message) { $('toast').textContent = message; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3800); }
+
+/* ---------- desktop floating reader (Document Picture-in-Picture) ---------- */
+let floatingWindow = null, floatingSyncTimer = null;
+function closeFloatingReader() {
+  clearInterval(floatingSyncTimer); floatingSyncTimer = null;
+  if (floatingWindow && !floatingWindow.closed) floatingWindow.close();
+  floatingWindow = null;
+}
+async function switchFloatingToReading() {
+  await enterReadingMode();
+  closeFloatingReader();
+}
+function syncFloatingReader() {
+  if (!floatingWindow || floatingWindow.closed) { closeFloatingReader(); return; }
+  const source = $('reading-text');
+  const target = floatingWindow.document.getElementById('floating-text');
+  const viewport = floatingWindow.document.getElementById('floating-scroll');
+  if (!target || !viewport) return;
+  if (target.dataset.source !== source.innerHTML) { target.innerHTML = source.innerHTML; target.dataset.source = source.innerHTML; }
+  target.style.fontSize = $('font-size').value + 'px';
+  target.style.lineHeight = view?.lineSpacing || '1.6';
+  target.style.color = view?.textColor || '#e7ecdf';
+  target.style.transform = `scaleX(${$('mirror').checked ? -1 : 1})`;
+  viewport.style.background = view?.backgroundColor || '#1c241f';
+  const sourceScroll = $('scroll-area');
+  const maxSource = Math.max(1, sourceScroll.scrollHeight - sourceScroll.clientHeight);
+  const maxTarget = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+  viewport.scrollTop = sourceScroll.scrollTop / maxSource * maxTarget;
+  const playButton = floatingWindow.document.getElementById('floating-play');
+  if (playButton) playButton.textContent = playing ? 'Ⅱ' : '▶';
+}
+async function openFloatingReader() {
+  if (matchMedia('(max-width:760px), (pointer:coarse)').matches) { toast(t('pip.unsupported')); return; }
+  if (!('documentPictureInPicture' in window)) { toast(t('pip.unsupported')); return; }
+  if (!$('script').value.trim()) { toast(t('toast.addScript')); $('script').focus(); return; }
+  if (floatingWindow && !floatingWindow.closed) { floatingWindow.focus(); return; }
+  try {
+    floatingWindow = await window.documentPictureInPicture.requestWindow({ width: 440, height: 620 });
+    const doc = floatingWindow.document;
+    doc.documentElement.lang = lang; doc.documentElement.dir = document.documentElement.dir;
+    doc.title = t('pip.button') + ' · CuePrompt';
+    doc.body.innerHTML = '<main><header><strong>CuePrompt</strong><span>' + t('pip.button') + '</span><div><button id="floating-fullscreen" aria-label="' + t('fs.toggle') + '" title="' + t('fs.toggle') + '"><b aria-hidden="true">⛶</b> ' + t('fs.toggle') + '</button><button id="floating-slower" aria-label="' + t('fs.slower') + '">−</button><button id="floating-play" aria-label="' + t('fs.play') + '">▶</button><button id="floating-faster" aria-label="' + t('fs.faster') + '">+</button></div></header><div id="floating-scroll"><div class="guide"></div><article id="floating-text"></article></div></main>';
+    const style = doc.createElement('style');
+    style.textContent = '*{box-sizing:border-box}html,body,main{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#111814;color:#e7ecdf}header{height:58px;padding:8px 10px;display:flex;align-items:center;gap:7px;background:#151e18;border-bottom:1px solid #334139}header strong{font-size:15px}header>span{color:#9caf97;font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}header div{display:flex;gap:5px}button{width:38px;height:40px;border:1px solid #3e5145;border-radius:8px;background:#202d25;color:#e7ecdf;font-size:17px;cursor:pointer}#floating-fullscreen{width:auto;min-width:108px;padding:0 11px;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#294b38;border-color:#557a63;font-size:12px;font-weight:750;white-space:nowrap}#floating-fullscreen b{font-size:15px}#floating-play{background:#2e6c50}#floating-scroll{position:absolute;inset:58px 0 0;overflow:hidden;padding:22vh 28px 70vh}.guide{position:fixed;z-index:2;top:calc(58px + 22vh);left:0;right:0;height:3px;background:#7da46f88;pointer-events:none}#floating-text{white-space:pre-wrap;overflow-wrap:anywhere;font-weight:550;transform-origin:center;transition:color .15s}.h{color:#a9cb94;font-size:.65em;text-transform:uppercase;letter-spacing:.08em;margin:.8em 0 .35em}.p{margin:0 0 1em}.marker{display:none}@media(max-width:390px){header>span{display:none}#floating-fullscreen{min-width:94px;padding-inline:8px}#floating-scroll{padding-inline:18px}}';
+    doc.head.append(style);
+    doc.getElementById('floating-fullscreen').onclick = switchFloatingToReading;
+    doc.getElementById('floating-play').onclick = () => play();
+    doc.getElementById('floating-slower').onclick = () => nudgeSpeed(-5);
+    doc.getElementById('floating-faster').onclick = () => nudgeSpeed(5);
+    floatingWindow.addEventListener('pagehide', () => { clearInterval(floatingSyncTimer); floatingSyncTimer = null; floatingWindow = null; });
+    syncFloatingReader(); floatingSyncTimer = setInterval(syncFloatingReader, 50);
+  } catch (error) { closeFloatingReader(); if (error?.name !== 'NotAllowedError') toast(t('pip.unsupported')); }
+}
+floatingButton.onclick = openFloatingReader;
+async function switchReadingToFloating() {
+  await openFloatingReader();
+  if (floatingWindow && isFullscreen()) {
+    await fullscreen();
+    if (isFullscreen()) setFullscreenState(false, false);
+  }
+}
 
 /* ---------- playback (steady + smart follow) ---------- */
 let playing = false, elapsed = 0, last = 0, frame, scrollPosition = 0, holdUntil = 0, modeKey = 'state.ready';
@@ -599,6 +665,7 @@ $('scroll-area').addEventListener('scroll', () => { if (!playing) { scrollPositi
 $('fs-play').onclick = () => play();
 $('fs-exit').onclick = fullscreen;
 $('reading-play').onclick = () => play();
+$('reading-float').onclick = switchReadingToFloating;
 $('reading-exit').onclick = fullscreen;
 $('enter-reading').onclick = enterReadingMode;
 $('reading-smaller-text').onclick = () => { $('font-size').value = Math.max(22, Number($('font-size').value) - 2); $('font-size').dispatchEvent(new Event('input')); showControls(); };
@@ -828,7 +895,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'm') setMode(settings.mode === 'follow' ? 'steady' : 'follow');
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); nudgeSpeed(e.key === 'ArrowUp' ? 5 : -5); }
 });
-window.addEventListener('pagehide', () => { stream?.getTracks().forEach(tr => tr.stop()); stopFollow(); saveLibrary(); });
+window.addEventListener('pagehide', () => { closeFloatingReader(); stream?.getTracks().forEach(tr => tr.stop()); stopFollow(); saveLibrary(); });
 
 /* ---------- reading view options ---------- */
 const viewDefaults = { textColor: '#e7ecdf', backgroundColor: '#1c241f', readingWidth: '100', lineSpacing: '1.6', mirrorVertical: false, readingGuide: true, highlight: true };
@@ -863,6 +930,7 @@ function applyI18n() {
   if (!$('script').value.trim()) renderScript();
   if ($('library-dialog').open) renderLibrary();
   $('fullscreen').setAttribute('aria-label', isFullscreen() ? t('fs.exit') : t('fs.toggle'));
+  $('reading-float').setAttribute('aria-label', t('pip.button')); $('reading-float').title = t('pip.button'); $('reading-float-label').textContent = t('pip.button');
 }
 async function setLanguage(code, persist) {
   if (!I18N.languages.some(l => l.code === code)) code = 'en';

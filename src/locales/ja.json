@@ -248,5 +248,10 @@
 "ai.pDashscope": "Alibaba Qwen（DashScope・中国本土）",
 "ai.pDashscopeIntl": "Alibaba Qwen（DashScope・国際）",
 "ai.pCustom": "その他の OpenAI 互換 API",
-"ai.corsNote": "キーは Alibaba Cloud Model Studio（DashScope）のコンソールで取得できます。DashScope はブラウザからの直接リクエストに対応しています。他のサービスはブロック（CORS）する場合があり、その場合は小さなプロキシが必要です。"
+"ai.corsNote": "キーは Alibaba Cloud Model Studio（DashScope）のコンソールで取得できます。DashScope はブラウザからの直接リクエストに対応しています。他のサービスはブロック（CORS）する場合があり、その場合は小さなプロキシが必要です。",
+"compat.badge": "PC · スマホ · インストール不要",
+"compat.title": "PC とスマホの両方で使えます",
+"compat.copy": "ブラウザで CuePrompt を開いてすぐに開始。アプリのダウンロードもアカウントも不要です。",
+"pip.button": "フローティングリーダー",
+"pip.unsupported": "フローティングリーダーには HTTPS 上のデスクトップ版 Chrome または Edge が必要です。"
 }

@@ -248,5 +248,10 @@
 "ai.pDashscope": "阿里雲通義千問（DashScope，中國大陸）",
 "ai.pDashscopeIntl": "阿里雲通義千問（DashScope，國際站）",
 "ai.pCustom": "其他 OpenAI 相容介面",
-"ai.corsNote": "請使用所選服務商的 API Key；ChatGPT 或 Claude 訂閱帳號不是 API Key。部分服務商可能攔截瀏覽器請求（CORS），需要另配一個小型代理。"
+"ai.corsNote": "請使用所選服務商的 API Key；ChatGPT 或 Claude 訂閱帳號不是 API Key。部分服務商可能攔截瀏覽器請求（CORS），需要另配一個小型代理。",
+"compat.badge": "電腦 · 手機 · 無需安裝",
+"compat.title": "電腦與手機都能使用",
+"compat.copy": "用瀏覽器開啟 CuePrompt 即可開始提詞，無需下載 App，也無需註冊帳號。",
+"pip.button": "懸浮閱讀",
+"pip.unsupported": "懸浮閱讀需要桌面版 Chrome 或 Edge，並透過 HTTPS 存取。"
 }

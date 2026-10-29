@@ -248,5 +248,10 @@
 "ai.pDashscope": "Alibaba Qwen (DashScope, Tiongkok daratan)",
 "ai.pDashscopeIntl": "Alibaba Qwen (DashScope, internasional)",
 "ai.pCustom": "API lain yang kompatibel dengan OpenAI",
-"ai.corsNote": "Dapatkan kunci di konsol Alibaba Cloud Model Studio (DashScope). DashScope menerima permintaan langsung dari browser; penyedia lain mungkin memblokirnya (CORS) dan memerlukan proxy kecil."
+"ai.corsNote": "Dapatkan kunci di konsol Alibaba Cloud Model Studio (DashScope). DashScope menerima permintaan langsung dari browser; penyedia lain mungkin memblokirnya (CORS) dan memerlukan proxy kecil.",
+"compat.badge": "PC · PONSEL · TANPA INSTALASI",
+"compat.title": "Mendukung PC dan ponsel",
+"compat.copy": "Buka CuePrompt di browser dan langsung mulai. Tidak perlu mengunduh aplikasi atau membuat akun.",
+"pip.button": "Pembaca mengambang",
+"pip.unsupported": "Pembaca mengambang memerlukan Chrome atau Edge desktop melalui HTTPS."
 }

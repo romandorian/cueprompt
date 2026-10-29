@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from site_i18n import LOCALES
 from site_i18n import PUBLIC_PAGE_SLUGS, absolute_url, hreflang_links, page_path
 from public_copy_ko import localize as localize_korean_tool
+from public_copy_locales import localize as localize_remaining_public_copy
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, DIST = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'dist')
@@ -80,6 +81,16 @@ def bake(template, code, d, en):
     out = re.sub(r'<[a-zA-Z][^>]*\sdata-i18n-(?:ph|aria|title|content)="[^"]*"[^>]*>', fix_tag, template)
     out = re.sub(r'(<(\w+)\b[^>]*\sdata-i18n="([^"]+)"[^>]*>)(.*?)(</\2>)',
                  lambda m: m.group(1) + html.escape(t(m.group(3)), quote=False) + m.group(5), out, flags=re.S)
+    compatibility = (
+        '<section class="compat-banner" aria-labelledby="compat-title">'
+        '<span class="compat-mark" aria-hidden="true">✓</span><div>'
+        f'<p class="compat-badge" data-i18n="compat.badge">{html.escape(t("compat.badge"))}</p>'
+        f'<h2 id="compat-title" data-i18n="compat.title">{html.escape(t("compat.title"))}</h2>'
+        f'<p data-i18n="compat.copy">{html.escape(t("compat.copy"))}</p>'
+        '</div></section>'
+    )
+    out = out.replace('</section><section class="workflow-runway"',
+                      '</section>' + compatibility + '<section class="workflow-runway"', 1)
     meta = next(l for l in LANGS if l[0] == code)
     out = re.sub(r'<html lang="[^"]*" dir="[^"]*" data-locale="[^"]*">', f'<html lang="{code}" dir="{meta[2]}" data-locale="{code}">', out, count=1)
     url = SITE + meta[3]
@@ -89,7 +100,7 @@ def bake(template, code, d, en):
     # Keep machine-readable application data aligned with the visible language,
     # rather than exposing an English-only description on localized pages.
     out = out.replace('"description":"Free browser-based teleprompter with voice-follow scrolling, a local script library and video recording."',
-                      '"description":' + json.dumps(t('meta.description'), ensure_ascii=False) + ',"inLanguage":' + json.dumps(code) + ',"featureList":["Voice-follow scrolling","Browser video recording","Local script library","Fullscreen teleprompter"]')
+                      '"description":' + json.dumps(t('meta.description'), ensure_ascii=False) + ',"inLanguage":' + json.dumps(code) + ',"featureList":["Voice-follow scrolling","Browser video recording","Local script library","Fullscreen teleprompter","Desktop and mobile browser support","No installation required"]')
     out = re.sub(r'<!-- hreflang:start -->.*?<!-- hreflang:end -->', hreflang_block(), out, flags=re.S)
     out = out.replace('href="/style.css"', f'href="/style.css?v={STYLE_VERSION}"')
     out = out.replace('<script src="/app.js" defer></script>', f'<script src="/workflow.js" defer></script><script src="/app.js?v={APP_VERSION}" defer></script><script src="/install.js" defer></script>')
@@ -217,6 +228,7 @@ def localize_public_content(page, locale, slug):
     if locale == 'ko' and slug in ('script-templates', 'script-extractor', 'publishing-assistant', 'video-converter'):
         head, separator, body = page.partition('</head>')
         page = head + separator + localize_korean_tool(body, slug)
+    page = localize_remaining_public_copy(page, locale)
     chrome = {
         'es': ('Abrir Studio ↗', 'Revisa el borrador y elige el siguiente paso.'),
         'pt': ('Abrir Studio ↗', 'Revise o rascunho e escolha o próximo passo.'),
@@ -271,6 +283,16 @@ def localize_public_content(page, locale, slug):
             'A private first draft, ready for the teleprompter': 'テレプロンプターですぐ使えるプライベートな下書き',
             'The template builder runs in your browser. It does not need an AI key and does not upload your ideas. Send the finished draft to CuePrompt Studio when you are ready to rehearse.': 'テンプレート作成機能はブラウザ内で動作します。AI キーは不要で、アイデアをアップロードしません。練習の準備ができたら、完成した下書きを CuePrompt Studio に送れます。',
             'Drafts stay in this browser. Optional transcription sends your selected recording to your chosen service.': '下書きはこのブラウザに残ります。任意の文字起こしでは、選択した録画のみが選択したサービスに送信されます。',
+            'Choose a speaking format, add your ideas, and build a script you can rehearse immediately.': '話し方の形式を選び、アイデアを加えて、すぐに練習できる台本を作成します。',
+            'Publishing Checklist &amp; Copy Builder': '公開チェックリストと文章作成',
+            'Local Video Compressor &amp; Converter': 'ローカル動画圧縮・変換',
+            'Paste a YouTube transcript': 'YouTube の文字起こしを貼り付け',
+            'Open email to send →': 'メールを開いて送信 →',
+            'Help shape CuePrompt': 'CuePrompt の改善にご協力ください',
+            'Feedback type': 'フィードバックの種類',
+            'What would you like to share?': 'どのようなことを共有しますか？',
+            'Write for the camera, not the page': '紙ではなく、カメラに向けて書く',
+            'Browse all guides': 'すべてのガイドを見る', 'Choose a script template': '台本テンプレートを選ぶ',
         },
         'zh-CN': {
             'Open studio ↗': '打开工作台 ↗', 'FROM IDEA TO CAMERA': '从想法到镜头',
@@ -292,6 +314,21 @@ def localize_public_content(page, locale, slug):
             'Video title': '视频标题', 'Script': '脚本', 'Call to action': '行动号召', 'Keywords (comma separated)': '关键词（用逗号分隔）',
             'Build publishing copy': '生成发布文案', 'Recording': '录制文件', 'Platform preset': '平台预设',
             'Output format': '输出格式', 'Canvas': '画布', 'Quality': '质量', 'Compress / convert locally': '在本地压缩 / 转换', 'Cancel': '取消',
+            'Choose a speaking format, add your ideas, and build a script you can rehearse immediately.': '选择口播形式，加入你的想法，生成一份可以立即排练的脚本。',
+            'Script Template Builder': '脚本模板生成器', 'Transcript Cleaner': '转录稿清理器',
+            'Publishing Checklist &amp; Copy Builder': '发布检查清单与文案生成器',
+            'Local Video Compressor &amp; Converter': '本地视频压缩与转换器',
+            'CHOOSE A STARTING POINT': '选择起点', 'What are you making?': '你想制作什么？',
+            'Short video hook': '短视频开场', 'Busy creators': '忙碌的内容创作者',
+            'The problem you solve': '你解决的问题',
+            'Start with a proven script structure': '从成熟的脚本结构开始',
+            'Paste a YouTube transcript': '粘贴 YouTube 转录稿',
+            'Paste your transcript': '粘贴你的转录稿',
+            'Open email to send →': '打开邮件并发送 →',
+            'Help shape CuePrompt': '帮助改进 CuePrompt', 'Feedback type': '反馈类型',
+            'What would you like to share?': '你想分享什么？',
+            'Write for the camera, not the page': '为镜头而写，不是为纸面而写',
+            'Browse all guides': '浏览全部指南', 'Choose a script template': '选择脚本模板',
         },
         'zh-TW': {
             'Open studio ↗': '開啟工作台 ↗', 'FROM IDEA TO CAMERA': '從想法到鏡頭',
@@ -300,6 +337,25 @@ def localize_public_content(page, locale, slug):
             'Edit in studio': '在工作台編輯', 'Download TXT': '下載 TXT', 'Copy': '複製',
             'LOCAL': '本機', 'Back to CuePrompt': '返回 CuePrompt',
             'Privacy': '隱私', 'Terms': '條款', 'Contact': '聯絡',
+            'Choose a speaking format, add your ideas, and build a script you can rehearse immediately.': '選擇口說形式，加入你的想法，建立一份可以立即排練的腳本。',
+            'Script Template Builder': '腳本範本建立器', 'Transcript Cleaner': '轉錄稿整理器',
+            'Publishing Checklist &amp; Copy Builder': '發佈檢查清單與文案建立器',
+            'Local Video Compressor &amp; Converter': '本機影片壓縮與轉換器',
+            'Drafts stay in this browser. Optional transcription sends your selected recording to your chosen service.': '草稿會保留在這個瀏覽器中。只有在你主動使用轉錄服務時，所選錄音才會傳送給你指定的服務。',
+            'INSTANT TEMPLATE': '即時範本',
+            'No AI key. No upload. Just a strong first draft.': '不需要 AI Key，不需上傳。先完成一份扎實的初稿。',
+            'Choose a proven speaking structure, add your words, then edit the result before you read.': '選擇成熟的口說結構，加入你的內容，再於朗讀前編輯初稿。',
+            'CHOOSE A STARTING POINT': '選擇起點', 'What are you making?': '你想製作什麼？',
+            'Short video hook': '短影片開場', 'Busy creators': '忙碌的內容創作者',
+            'The problem you solve': '你解決的問題',
+            'Start with a proven script structure': '從成熟的腳本結構開始',
+            'Paste a YouTube transcript': '貼上 YouTube 轉錄稿',
+            'Paste your transcript': '貼上你的轉錄稿',
+            'Open email to send →': '開啟電子郵件並傳送 →',
+            'Help shape CuePrompt': '協助改善 CuePrompt', 'Feedback type': '意見回饋類型',
+            'What would you like to share?': '你想分享什麼？',
+            'Write for the camera, not the page': '為鏡頭而寫，不是為紙面而寫',
+            'Browse all guides': '瀏覽所有指南', 'Choose a script template': '選擇腳本範本',
         },
     }
     # Long strings first: replacing "Draft" before "Drafts stay …" would
@@ -491,6 +547,11 @@ def main():
     write(os.path.join(DIST, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' + urls + '</urlset>\n')
     write(os.path.join(DIST, 'robots.txt'), f'User-agent: *\nAllow: /\nSitemap: {SITE}/sitemap.xml\n')
     verify_generated_seo()
+    # Completed public-page locale batches stay guarded while the remaining
+    # languages are translated progressively.
+    strict_locale_args = [item for code, *_ in LANGS if code != 'en' for item in ('--locale', code)]
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'audit_public_i18n.py'),
+                    '--strict', *strict_locale_args, '--dist', DIST], check=True)
     # Opt-in until every public-copy batch is translated; CI/release builds
     # enable this to prevent a localized route from regressing to English.
     if os.environ.get('CUEPROMPT_STRICT_I18N') == '1':

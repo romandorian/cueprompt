@@ -248,5 +248,10 @@
 "ai.pDashscope": "Alibaba Qwen (DashScope, Trung Quốc đại lục)",
 "ai.pDashscopeIntl": "Alibaba Qwen (DashScope, quốc tế)",
 "ai.pCustom": "API khác tương thích OpenAI",
-"ai.corsNote": "Lấy khóa trong bảng điều khiển Alibaba Cloud Model Studio (DashScope). DashScope chấp nhận yêu cầu gửi thẳng từ trình duyệt; nhà cung cấp khác có thể chặn (CORS) và cần một proxy nhỏ."
+"ai.corsNote": "Lấy khóa trong bảng điều khiển Alibaba Cloud Model Studio (DashScope). DashScope chấp nhận yêu cầu gửi thẳng từ trình duyệt; nhà cung cấp khác có thể chặn (CORS) và cần một proxy nhỏ.",
+"compat.badge": "MÁY TÍNH · ĐIỆN THOẠI · KHÔNG CẦN CÀI ĐẶT",
+"compat.title": "Hỗ trợ cả máy tính và điện thoại",
+"compat.copy": "Mở CuePrompt trong trình duyệt và bắt đầu ngay. Không cần tải ứng dụng hay tạo tài khoản.",
+"pip.button": "Trình đọc nổi",
+"pip.unsupported": "Trình đọc nổi cần Chrome hoặc Edge trên máy tính qua HTTPS."
 }

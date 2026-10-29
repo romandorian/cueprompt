@@ -57,6 +57,7 @@ Open http://localhost:5173. Camera, microphone and speech recognition need `loca
   - User text uses `dir="auto"`.
   - Every language has its own pre-rendered page (`/zh/`, `/ar/`, …) with translated title/description, canonical, hreflang (+ x-default) and sitemap alternates.
 - Fullscreen with on-screen controls, mirror and vertical mirror, colors, width, line spacing, keyboard shortcuts.
+- Desktop floating reader using Document Picture-in-Picture, with synchronized script, playback controls and one-click switching back to fullscreen. The floating entry is hidden on mobile, where browser-level overlay support is not reliable.
 
 ## Privacy (what leaves the device)
 
@@ -68,7 +69,7 @@ Open http://localhost:5173. Camera, microphone and speech recognition need `loca
 
 ```
 src/index.html        English template for every app page (edit this, not dist/*/index.html)
-src/locales/*.json    UI strings, 249 keys per language (en.json is the reference)
+src/locales/*.json    UI strings, 269 keys per language (en.json is the reference)
 tools/build_pages.py  bakes translations into dist/index.html and dist/<lang>/index.html,
                       writes dist/i18n.js + dist/i18n/<lang>.js and sitemap.xml, adds hreflang
 dist/                 the deployable static site

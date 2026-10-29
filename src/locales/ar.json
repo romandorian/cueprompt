@@ -248,5 +248,10 @@
 "ai.pDashscope": "Alibaba Qwen (DashScope، البر الرئيسي للصين)",
 "ai.pDashscopeIntl": "Alibaba Qwen (DashScope، دولي)",
 "ai.pCustom": "واجهة API أخرى متوافقة مع OpenAI",
-"ai.corsNote": "احصل على مفتاح من وحدة تحكم Alibaba Cloud Model Studio (DashScope). يقبل DashScope الطلبات المرسلة مباشرة من المتصفح؛ قد يحظرها مزوّدون آخرون (CORS) ويحتاجون إلى وسيط صغير."
+"ai.corsNote": "احصل على مفتاح من وحدة تحكم Alibaba Cloud Model Studio (DashScope). يقبل DashScope الطلبات المرسلة مباشرة من المتصفح؛ قد يحظرها مزوّدون آخرون (CORS) ويحتاجون إلى وسيط صغير.",
+"compat.badge": "الكمبيوتر · الهاتف · بلا تثبيت",
+"compat.title": "يعمل على الكمبيوتر والهاتف",
+"compat.copy": "افتح CuePrompt في المتصفح وابدأ فورًا. لا تحتاج إلى تنزيل تطبيق أو إنشاء حساب.",
+"pip.button": "قارئ عائم",
+"pip.unsupported": "يتطلب القارئ العائم Chrome أو Edge على سطح المكتب عبر HTTPS."
 }

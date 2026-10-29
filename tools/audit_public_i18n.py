@@ -25,9 +25,11 @@ VISIBLE_ENGLISH = (
 )
 
 
-def findings(dist):
+def findings(dist, locales=None):
     for code, *_ in LOCALES:
         if code == 'en':
+            continue
+        if locales and code not in locales:
             continue
         for slug in PUBLIC_PAGE_SLUGS:
             page = dist / page_path(code, slug).strip('/') / 'index.html'
@@ -41,8 +43,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--strict', action='store_true', help='exit nonzero when visible English is found')
     parser.add_argument('--dist', default='dist')
+    parser.add_argument('--locale', action='append', choices=[code for code, *_ in LOCALES if code != 'en'],
+                        help='audit only this locale (repeatable)')
     args = parser.parse_args()
-    result = list(findings(Path(args.dist)))
+    result = list(findings(Path(args.dist), set(args.locale or ())))
     for code, slug, phrase in result:
         print(f'{code}/{slug}: {phrase}')
     print(f'visible-English findings: {len(result)}')

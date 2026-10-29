@@ -262,5 +262,10 @@
 "ai.pDashscope": "Alibaba Qwen (DashScope, mainland China)",
 "ai.pDashscopeIntl": "Alibaba Qwen (DashScope, international)",
 "ai.pCustom": "Other OpenAI-compatible API",
-"ai.corsNote": "Use an API key from the provider you select — a ChatGPT or Claude subscription login is not an API key. Some providers may block browser requests (CORS) and need a small proxy."
+"ai.corsNote": "Use an API key from the provider you select — a ChatGPT or Claude subscription login is not an API key. Some providers may block browser requests (CORS) and need a small proxy.",
+"compat.badge": "DESKTOP · MOBILE · NO INSTALL",
+"compat.title": "Works on desktop and mobile",
+"compat.copy": "Open CuePrompt in your browser and start prompting. No app download or account required.",
+"pip.button": "Floating reader",
+"pip.unsupported": "Floating reader requires desktop Chrome or Edge over HTTPS."
 }
