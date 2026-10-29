@@ -153,7 +153,7 @@
 "faq.q6": "Kann ich es mit einem echten Teleprompter nutzen?",
 "faq.a6": "Ja. Aktiviere „Text spiegeln“ für Strahlteiler-Glas oder „Vertikal spiegeln“ für Halterungen, die das Bild umdrehen, und wechsle ins Vollbild.",
 "faq.q7": "Wie funktioniert der KI-Texter?",
-"faq.a7": "Füge einen API-Schlüssel eines beliebigen OpenAI-kompatiblen Dienstes ein und gib dessen Basis-URL an; Standard ist Alibaba Qwen (DashScope). Der Schlüssel wird nur in diesem Browser gespeichert, und Anfragen gehen direkt von deinem Browser an den Anbieter. CuePrompt sieht, speichert oder liefert nie einen Schlüssel.",
+"faq.a7": "Füge einen API-Schlüssel eines beliebigen OpenAI-kompatiblen Dienstes ein und gib dessen Basis-URL an. Der Schlüssel wird nur in diesem Browser gespeichert, und Anfragen gehen direkt von deinem Browser an den Anbieter. CuePrompt sieht, speichert oder liefert nie einen Schlüssel.",
 "footer.tagline": "Ein bisschen mehr Selbstvertrauen, Wort für Wort.",
 "footer.download": "Skript herunterladen",
 "help.title": "Finde deinen Flow.",

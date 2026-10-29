@@ -153,7 +153,7 @@
 "faq.q6": "Puis-je l'utiliser avec un prompteur physique ?",
 "faq.a6": "Oui. Activez Texte en miroir pour une vitre semi-réfléchissante, ou Miroir vertical pour les supports qui inversent l'image, puis passez en plein écran.",
 "faq.q7": "Comment fonctionne le rédacteur IA ?",
-"faq.a7": "Collez une clé API de n'importe quel service compatible OpenAI et indiquez son URL de base ; par défaut, c'est Alibaba Qwen (DashScope). La clé est stockée uniquement dans ce navigateur et les requêtes partent directement de votre navigateur vers le fournisseur. CuePrompt ne voit, ne stocke et n'intègre aucune clé.",
+"faq.a7": "Collez une clé API de n'importe quel service compatible OpenAI et indiquez son URL de base. La clé est stockée uniquement dans ce navigateur et les requêtes partent directement de votre navigateur vers le fournisseur. CuePrompt ne voit, ne stocke et n'intègre aucune clé.",
 "footer.tagline": "Un peu plus d'assurance, un mot à la fois.",
 "footer.download": "Télécharger le script",
 "help.title": "Trouvez votre rythme.",

@@ -153,7 +153,7 @@
 "faq.q6": "Có dùng được với bộ nhắc chữ thật không?",
 "faq.a6": "Có. Bật Lật chữ ngang cho kính bán phản chiếu, hoặc Lật dọc cho giá đỡ đảo ngược hình, rồi chuyển sang toàn màn hình.",
 "faq.q7": "Trợ lý viết AI hoạt động thế nào?",
-"faq.a7": "Dán khóa API của bất kỳ dịch vụ tương thích OpenAI nào và đặt URL gốc; mặc định là Alibaba Qwen (DashScope). Khóa chỉ được lưu trong trình duyệt này và yêu cầu đi thẳng từ trình duyệt đến nhà cung cấp. CuePrompt không bao giờ xem, lưu hay đóng gói khóa.",
+"faq.a7": "Dán khóa API của bất kỳ dịch vụ tương thích OpenAI nào và đặt URL gốc. Khóa chỉ được lưu trong trình duyệt này và yêu cầu đi thẳng từ trình duyệt đến nhà cung cấp. CuePrompt không bao giờ xem, lưu hay đóng gói khóa.",
 "footer.tagline": "Thêm chút tự tin, từng chữ một.",
 "footer.download": "Tải kịch bản",
 "help.title": "Bắt nhịp nào.",

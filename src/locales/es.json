@@ -153,7 +153,7 @@
 "faq.q6": "¿Puedo usarlo con un teleprompter físico?",
 "faq.a6": "Sí. Activa Texto en espejo para cristales divisores de haz, o Espejo vertical para soportes que invierten la imagen, y pasa a pantalla completa.",
 "faq.q7": "¿Cómo funciona el redactor IA?",
-"faq.a7": "Pega una clave de API de cualquier servicio compatible con OpenAI y configura su URL base; por defecto se usa Alibaba Qwen (DashScope). La clave solo se guarda en este navegador y las solicitudes van directamente de tu navegador al proveedor. CuePrompt nunca ve, guarda ni incluye ninguna clave.",
+"faq.a7": "Pega una clave de API de cualquier servicio compatible con OpenAI y configura su URL base. La clave solo se guarda en este navegador y las solicitudes van directamente de tu navegador al proveedor. CuePrompt nunca ve, guarda ni incluye ninguna clave.",
 "footer.tagline": "Un poco más de confianza, palabra a palabra.",
 "footer.download": "Descargar guion",
 "help.title": "Encuentra tu ritmo.",

@@ -153,7 +153,7 @@
 "faq.q6": "Bisakah dipakai dengan rig teleprompter fisik?",
 "faq.a6": "Bisa. Aktifkan Cerminkan teks untuk kaca beam-splitter, atau Cermin vertikal untuk dudukan yang membalik gambar, lalu masuk ke layar penuh.",
 "faq.q7": "Bagaimana cara kerja Penulis AI?",
-"faq.a7": "Tempel kunci API dari layanan apa pun yang kompatibel dengan OpenAI dan atur URL dasarnya; bawaannya Alibaba Qwen (DashScope). Kunci hanya disimpan di browser ini dan permintaan langsung dikirim dari browser Anda ke penyedia. CuePrompt tidak pernah melihat, menyimpan, atau menyertakan kunci.",
+"faq.a7": "Tempel kunci API dari layanan apa pun yang kompatibel dengan OpenAI dan atur URL dasarnya. Kunci hanya disimpan di browser ini dan permintaan langsung dikirim dari browser Anda ke penyedia. CuePrompt tidak pernah melihat, menyimpan, atau menyertakan kunci.",
 "footer.tagline": "Sedikit lebih percaya diri, kata demi kata.",
 "footer.download": "Unduh naskah",
 "help.title": "Temukan alur Anda.",

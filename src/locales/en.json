@@ -167,7 +167,7 @@
 "faq.q6": "Can I use it with a physical teleprompter?",
 "faq.a6": "Yes. Turn on Mirror text for beam-splitter glass, or Vertical mirror for rigs that flip the image, then go fullscreen.",
 "faq.q7": "How does the AI writer work?",
-"faq.a7": "Paste an API key for any OpenAI-compatible service and set its base URL; the default is Alibaba Qwen (DashScope), which works from mainland China. The key is stored only in this browser and requests go straight from your browser to that provider. CuePrompt never sees, stores or ships a key.",
+"faq.a7": "Paste an API key for any OpenAI-compatible service and set its base URL. The key is stored only in this browser and requests go straight from your browser to that provider. CuePrompt never sees, stores or ships a key.",
 "footer.tagline": "A little more confidence, one word at a time.",
 "footer.download": "Download script",
 "help.title": "Find your flow.",
