@@ -971,6 +971,20 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
   fillSpeechLanguages(); fillAiLanguages();
   applyView(); renderScript();
   await setLanguage(initial, false);
+  const intro = document.querySelector('.intro');
+  if (intro) {
+    const actions = document.createElement('div');
+    actions.className = 'hero-actions';
+    actions.innerHTML = `<a class="hero-primary" href="#studio">${t('flow.read.cta').replace(/[↓↗]/g, '').trim()} <span>→</span></a><a class="hero-secondary" href="#how-it-works">${t('nav.how')} <span>↓</span></a>`;
+    const proof = document.createElement('div');
+    proof.className = 'hero-proof';
+    proof.innerHTML = `<span>✓ ${t('footer.free')}</span><span>✓ ${t('header.badge')}</span><span>✓ ${t('compat.title')}</span>`;
+    const product = document.createElement('div');
+    product.className = 'hero-product';
+    product.setAttribute('aria-hidden', 'true');
+    product.innerHTML = `<div class="hero-product-bar"><span><i></i> ${t('mode.follow')}</span><span>${t('save.saved')}</span></div><div class="hero-product-stage"><span class="hero-product-kicker">${t('state.ready')}</span><div class="hero-product-copy"><small>${t('flow.read.title')}</small><strong>${t('intro.h1em')}</strong><em>${t('intro.p')}</em></div><div class="hero-product-guide"><span>${t('mode.follow')}</span></div></div><div class="hero-product-controls"><span>00:04:12</span><b>●</b><span>${t('settings.speed')} 40</span></div>`;
+    intro.append(actions, proof, product);
+  }
   setMode(settings.mode === 'follow' && SpeechRec ? 'follow' : 'steady', true);
   if (!SpeechRec) $('mode-follow').classList.add('unsupported');
   reset();
