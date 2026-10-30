@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CuePrompt Studio | Professional Studio Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/satoshi');
+        @import url('https://fonts.cdnfonts.com/css/cabinet-grotesk');
+        
+        :root {
+            --ink: #0a0c0b;
+            --green: #2e6c50;
+            --accent: #4ade80;
+            --surface: #121514;
+            --border: rgba(255,255,255,0.08);
+        }
+        
+        body {
+            font-family: 'Satoshi', sans-serif;
+            color: #e5e7eb;
+            background: var(--ink);
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        h1, h2, h3 {
+            font-family: 'Cabinet Grotesk', sans-serif;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .wave-bar {
+            animation: wave 1.2s ease-in-out infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { height: 4px; }
+            50% { height: 24px; }
+        }
+        
+        .record-dot {
+            animation: pulse-red 1.5s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .glass-panel {
+            background: rgba(18, 21, 20, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <div class="h-screen w-full flex flex-col bg-[#080a09]">
+        <!-- Header -->
+        <header class="h-14 border-b border-white/5 bg-black/40 backdrop-blur-md px-4 flex items-center justify-between z-50">
+            <div class="flex items-center gap-3">
+                <img src="https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/brand/01b00d19-574b-4b52-8aee-3188b2ddc856/assets/c912f1cd-d834-4bb1-aa54-ad018ffef171.jpg" class="w-7 h-7 rounded" alt="CuePrompt">
+                <h1 class="text-sm font-bold tracking-widest uppercase text-white/90">
+                    CuePrompt <span class="text-[#2e6c50]">STUDIO PRO</span>
+                </h1>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-1 border border-white/10">
+                    <div class="flex flex-col">
+                        <span class="text-[8px] uppercase text-white/40">Resolution</span>
+                        <span class="text-[10px] font-bold">4K (3840x2160)</span>
+                    </div>
+                    <iconify-icon icon="lucide:chevron-down" class="text-xs text-white/40"></iconify-icon>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-1 border border-white/10">
+                    <div class="flex flex-col">
+                        <span class="text-[8px] uppercase text-white/40">Frame Rate</span>
+                        <span class="text-[10px] font-bold">60 FPS</span>
+                    </div>
+                    <iconify-icon icon="lucide:chevron-down" class="text-xs text-white/40"></iconify-icon>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-1 border border-white/10">
+                    <div class="flex flex-col">
+                        <span class="text-[8px] uppercase text-white/40">Bitrate</span>
+                        <span class="text-[10px] font-bold">35 Mbps</span>
+                    </div>
+                    <iconify-icon icon="lucide:chevron-down" class="text-xs text-white/40"></iconify-icon>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 px-3 py-1 rounded bg-red-600/10 border border-red-600/20 text-red-500 font-bold text-[10px]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-600 record-dot"></span>
+                    LIVE 00:04:12
+                </div>
+                <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10">
+                    <iconify-icon icon="lucide:settings"></iconify-icon>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 flex overflow-hidden">
+            <!-- Script Sidebar -->
+            <aside class="w-64 border-r border-white/5 bg-[#0a0c0b] flex flex-col">
+                <div class="p-4 flex flex-col gap-4">
+                    <button class="w-full py-2.5 bg-[#2e6c50] text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-black/20">
+                        <iconify-icon icon="lucide:plus"></iconify-icon>
+                        NEW SCRIPT
+                    </button>
+                    <div class="relative">
+                        <iconify-icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs"></iconify-icon>
+                        <input type="text" placeholder="Search scripts..." class="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 text-[11px] focus:outline-none focus:border-[#2e6c50]">
+                    </div>
+                </div>
+                <nav class="flex-1 overflow-y-auto custom-scrollbar px-2 space-y-1">
+                    <div class="p-3 bg-white/5 border-l-2 border-[#2e6c50] rounded-r-lg group cursor-pointer">
+                        <h4 class="text-[11px] font-bold text-white/90">Q4 Product Vision Keynote</h4>
+                        <p class="text-[9px] text-white/40 mt-1 uppercase tracking-tighter">Modified 2m ago • 1,240 words</p>
+                    </div>
+                    <div class="p-3 hover:bg-white/5 rounded-lg group cursor-pointer transition-colors">
+                        <h4 class="text-[11px] font-medium text-white/50 group-hover:text-white">Daily Tech News Summary</h4>
+                        <p class="text-[9px] text-white/30 mt-1 uppercase tracking-tighter">Oct 28 • 450 words</p>
+                    </div>
+                    <div class="p-3 hover:bg-white/5 rounded-lg group cursor-pointer transition-colors">
+                        <h4 class="text-[11px] font-medium text-white/50 group-hover:text-white">Onboarding Module 04</h4>
+                        <p class="text-[9px] text-white/30 mt-1 uppercase tracking-tighter">Oct 25 • 2,100 words</p>
+                    </div>
+                </nav>
+                <div class="p-4 bg-black/20 border-t border-white/5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <iconify-icon icon="lucide:hard-drive" class="text-xs text-white/20"></iconify-icon>
+                        <div class="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div class="w-3/4 h-full bg-[#2e6c50]"></div>
+                        </div>
+                    </div>
+                    <span class="text-[9px] text-white/30 uppercase">Storage: 12.4GB of 50GB Used</span>
+                </div>
+            </aside>
+
+            <!-- Recording Preview -->
+            <section class="flex-1 flex flex-col bg-black relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80"></div>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-24">
+                    <div class="w-full max-w-4xl text-center flex flex-col gap-12 opacity-90">
+                        <span class="text-3xl font-medium text-white/30 blur-[1px]">Next-generation workflow...</span>
+                        <span class="text-6xl font-black text-white leading-tight tracking-tight drop-shadow-2xl uppercase">
+                            We are building the future of video production, one word at a time.
+                        </span>
+                        <span class="text-3xl font-medium text-white/30 blur-[1px]">Our mission is simple yet bold...</span>
+                    </div>
+                    <div class="absolute top-1/2 w-full border-t border-[#2e6c50]/40 flex items-center justify-center">
+                        <div class="px-4 py-1 bg-[#2e6c50] text-white text-[10px] font-bold rounded-full -translate-y-1/2 uppercase tracking-widest">
+                            Eye Level Guide
+                        </div>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-32 left-8 right-8 flex flex-col gap-4">
+                    <div class="flex justify-between items-end">
+                        <div class="flex gap-1 items-end h-8">
+                            <div class="w-1 bg-[#2e6c50] wave-bar" style="animation-delay: 0.1s"></div>
+                            <div class="w-1 bg-[#2e6c50] wave-bar" style="animation-delay: 0.2s"></div>
+                            <div class="w-1 bg-white wave-bar" style="animation-delay: 0.3s"></div>
+                            <div class="w-1 bg-[#2e6c50] wave-bar" style="animation-delay: 0.4s"></div>
+                            <div class="w-1 bg-white wave-bar" style="animation-delay: 0.5s"></div>
+                            <div class="w-1 bg-[#2e6c50] wave-bar" style="animation-delay: 0.6s"></div>
+                            <div class="w-1 bg-white wave-bar" style="animation-delay: 0.7s"></div>
+                            <div class="w-1 bg-[#2e6c50] wave-bar" style="animation-delay: 0.8s"></div>
+                            <span class="text-[10px] font-mono text-white/60 ml-2">-24dB PCM</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase font-bold text-white/40 tracking-widest">Timeline</span>
+                            <div class="text-2xl font-mono text-[#4ade80]">00:04:12:08</div>
+                        </div>
+                    </div>
+                    <div class="h-12 w-full bg-white/5 backdrop-blur border border-white/10 rounded-lg relative overflow-hidden flex items-center px-4">
+                        <div class="absolute inset-y-0 left-0 w-1/3 bg-[#2e6c50]/30 border-r border-[#2e6c50]"></div>
+                        <div class="w-full flex justify-between px-2 text-[8px] font-mono text-white/20">
+                            <span>00:00:00</span>
+                            <span>00:02:00</span>
+                            <span>00:04:00</span>
+                            <span>00:06:00</span>
+                            <span>00:08:00</span>
+                            <span>00:10:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-6 left-1/2 -translate-x-1/2 glass-panel p-2 rounded-2xl flex items-center gap-4 px-6">
+                    <div class="flex items-center gap-6 border-r border-white/10 pr-6">
+                        <button class="text-white/40 hover:text-white">
+                            <iconify-icon icon="lucide:skip-back" class="text-xl"></iconify-icon>
+                        </button>
+                        <button class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-xl shadow-red-900/40 hover:scale-105 active:scale-95 transition-all">
+                            <iconify-icon icon="lucide:square" class="text-white text-xl"></iconify-icon>
+                        </button>
+                        <button class="text-white/40 hover:text-white">
+                            <iconify-icon icon="lucide:skip-forward" class="text-xl"></iconify-icon>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-6 px-4">
+                        <div class="flex flex-col gap-1 w-24">
+                            <span class="text-[8px] uppercase font-bold text-white/40">Speed</span>
+                            <input type="range" class="w-full h-1 bg-white/10 rounded-full accent-[#2e6c50]">
+                        </div>
+                        <div class="flex flex-col gap-1 w-24">
+                            <span class="text-[8px] uppercase font-bold text-white/40">Opacity</span>
+                            <input type="range" class="w-full h-1 bg-white/10 rounded-full accent-[#2e6c50]">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Editor Panel -->
+            <aside class="w-80 border-l border-white/5 bg-[#0a0c0b] flex flex-col z-40">
+                <div class="flex border-b border-white/5">
+                    <button class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest border-b-2 border-[#2e6c50] text-white">
+                        Script
+                    </button>
+                    <button class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white">
+                        Style
+                    </button>
+                    <button class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white">
+                        Device
+                    </button>
+                    <button class="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white">
+                        Export
+                    </button>
+                </div>
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <div class="p-5 flex-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <label class="text-[9px] font-bold uppercase text-white/40 tracking-wider">Editor Content</label>
+                                <span class="text-[9px] text-[#4ade80]">Auto-saved</span>
+                            </div>
+                            <textarea class="w-full flex-1 min-h-[300px] bg-black/40 border border-white/10 rounded-xl p-4 text-xs leading-relaxed focus:outline-none focus:border-[#2e6c50]/40 custom-scrollbar resize-none" spellcheck="false">## Segment 1: The Vision
+We are building the future of video production, one word at a time.
+
+[PAUSE 2s]
+
+Our mission is simple yet bold: Democratizing high-end studio capabilities for every creator.
+
+## Segment 2: Innovation
+By leveraging browser-based AI, we eliminate the need for expensive hardware setups.</textarea>
+                            </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-3 bg-white/5 rounded-lg border border-white/10">
+                                <span class="text-[8px] uppercase text-white/40 block mb-1">Reading Time</span>
+                                <span class="text-xs font-bold">04:32</span>
+                            </div>
+                            <div class="p-3 bg-white/5 rounded-lg border border-white/10">
+                                <span class="text-[8px] uppercase text-white/40 block mb-1">Word Count</span>
+                                <span class="text-xs font-bold">1,240</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5 bg-black/40 flex flex-col gap-3 border-t border-white/5">
+                        <button class="w-full py-3 bg-white/5 border border-white/10 hover:bg-[#2e6c50]/10 hover:border-[#2e6c50]/30 rounded-lg text-[10px] font-bold uppercase text-[#2e6c50] flex items-center justify-center gap-2 transition-all">
+                            <iconify-icon icon="lucide:sparkles"></iconify-icon>
+                            Rewrite with AI
+                        </button>
+                        <button class="w-full py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg text-[10px] font-bold uppercase text-white/60 flex items-center justify-center gap-2 transition-all">
+                            <iconify-icon icon="lucide:upload"></iconify-icon>
+                            Import Script
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        // Add basic interactivity
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                console.log('Button clicked:', this.textContent);
+            });
+        });
+    </script>
+</body>
+</html>
