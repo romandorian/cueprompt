@@ -50,6 +50,9 @@ floatingButton.id = 'floating-reader'; floatingButton.className = 'floating-read
 floatingButton.dataset.i18nAria = 'pip.button'; floatingButton.setAttribute('aria-label', 'Floating reader');
 floatingButton.innerHTML = '<span aria-hidden="true">◲</span> <span data-i18n="pip.button">Floating reader</span>';
 readingButton.before(floatingButton);
+const exportScriptButton = $('export-script');
+exportScriptButton.classList.add('editor-export-button');
+$('ai-button').after(exportScriptButton);
 const legacy = store.get('cueprompt-v1', null);
 const settings = Object.assign({ speed: 40, size: 36, mirror: false, mode: 'steady', speechLang: '', uiLang: '', camera: '', mic: '', resolution: 'auto', format: 'auto', countdown: true, mirrorCamera: true },
   legacy && typeof legacy === 'object' ? { speed: legacy.speed || 40, size: legacy.size || 36, mirror: !!legacy.mirror } : {},

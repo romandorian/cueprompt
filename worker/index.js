@@ -47,7 +47,7 @@ function errorCode(error) {
 
 async function generate(request, env) {
   if (request.method !== 'POST') return json({ error: { code: 'METHOD_NOT_ALLOWED' } }, 405, { Allow: 'POST' });
-  if (!env.DASHSCOPE_API_KEY) return json({ error: { code: 'AI_NOT_CONFIGURED', retryable: false } }, 503);
+  if (!env.DEEPSEEK_API_KEY) return json({ error: { code: 'AI_NOT_CONFIGURED', retryable: false } }, 503);
 
   const contentLength = Number(request.headers.get('content-length') || 0);
   if (contentLength > 25000) return json({ error: { code: 'INPUT_TOO_LONG', retryable: false } }, 413);
@@ -71,10 +71,10 @@ async function generate(request, env) {
 
   let upstream;
   try {
-    upstream = await fetch(`${String(env.DASHSCOPE_BASE_URL).replace(/\/+$/, '')}/chat/completions`, {
+    upstream = await fetch(`${String(env.DEEPSEEK_BASE_URL).replace(/\/+$/, '')}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.DASHSCOPE_API_KEY}` },
-      body: JSON.stringify({ model: env.DASHSCOPE_MODEL || 'qwen-plus', messages, temperature: 0.7, max_tokens: 2400 }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.DEEPSEEK_API_KEY}` },
+      body: JSON.stringify({ model: env.DEEPSEEK_MODEL || 'deepseek-flash', messages, temperature: 0.7, max_tokens: 2400, thinking: { type: 'disabled' } }),
       signal: AbortSignal.timeout(45000)
     });
   } catch {
@@ -84,14 +84,14 @@ async function generate(request, env) {
   let data = null;
   try { data = await upstream.json(); } catch { /* Upstream may return an HTML error page. */ }
   if (!upstream.ok) {
-    console.error('DashScope request failed', { status: upstream.status, code: data?.code || data?.error?.code });
+    console.error('DeepSeek request failed', { status: upstream.status, code: data?.code || data?.error?.code });
     const code = upstream.status === 401 ? 'AI_AUTH_FAILED' : upstream.status === 429 ? 'RATE_LIMITED' : upstream.status >= 500 ? 'PROVIDER_UNAVAILABLE' : 'PROVIDER_ERROR';
     return json({ error: { code, retryable: upstream.status === 429 || upstream.status >= 500 } }, upstream.status === 429 ? 429 : 502);
   }
 
   const text = cleanString(data?.choices?.[0]?.message?.content, 30000).replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
   if (!text) return json({ error: { code: 'EMPTY_RESPONSE', retryable: true } }, 502);
-  return json({ text, model: env.DASHSCOPE_MODEL || 'qwen-plus' });
+  return json({ text, model: env.DEEPSEEK_MODEL || 'deepseek-flash' });
 }
 
 export default {

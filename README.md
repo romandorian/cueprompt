@@ -1,8 +1,8 @@
 # CuePrompt
 
-Free browser teleprompter studio: voice-following scroll (Smart Follow), steady scroll, a script library, Word/PDF import, camera recording with review, and an AI writer powered by hosted Alibaba Qwen with optional bring-your-own-key access. The UI comes in 15 languages.
+Free browser teleprompter studio: voice-following scroll (Smart Follow), steady scroll, a script library, Word/PDF import, camera recording with review, and an AI writer powered by hosted DeepSeek with optional bring-your-own-key access. The UI comes in 15 languages.
 
-The site is plain HTML/CSS/JS with no account and no CDN at runtime. A small Cloudflare Worker proxies hosted AI requests so the DashScope key never reaches the browser. Every browser dependency is vendored under `dist/vendor/`, so the site shell also loads in mainland China.
+The site is plain HTML/CSS/JS with no account and no CDN at runtime. A small Cloudflare Worker proxies hosted AI requests so the DeepSeek key never reaches the browser. Every browser dependency is vendored under `dist/vendor/`, so the site shell also loads in mainland China.
 
 ## Run locally
 
@@ -45,13 +45,10 @@ Open http://localhost:5173. Camera, microphone and speech recognition need `loca
   - Optional 3-2-1 countdown, which you can cancel by pressing Record again.
   - Mirrored selfie preview at full opacity.
   - After recording you get a review dialog with Download, Retake and Discard; Discard asks first if the take wasn't downloaded.
-- **AI writer.** Generate a script from topic + duration + tone + language, rewrite it (shorter / conversational / clearer / custom), or translate it. New users use hosted Alibaba Qwen through `/api/ai/generate`; advanced users can still bring their own key.
-  - Works with any OpenAI-compatible `/chat/completions` endpoint. The default is Alibaba Qwen via DashScope compatible mode:
-    - mainland endpoint `https://dashscope.aliyuncs.com/compatible-mode/v1`
-    - international preset `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`
-    - model `qwen-plus` (editable: `qwen-turbo`, `qwen-max`, …)
-  - The hosted DashScope key is stored only as the Cloudflare Worker secret `DASHSCOPE_API_KEY`. A user-supplied key is stored only in that user's localStorage (`cueprompt-ai`). No key is shipped in browser assets.
-  - DashScope answers browser CORS preflights, checked 2026-10-22, so no proxy is needed. Other providers may block browser calls; they would need a small proxy.
+- **AI writer.** Generate a script from topic + duration + tone + language, rewrite it (shorter / conversational / clearer / custom), or translate it. New users use hosted DeepSeek through `/api/ai/generate`; advanced users can still bring their own key for any supported provider.
+  - The hosted endpoint is `https://api.deepseek.com/chat/completions` with model `deepseek-flash` and thinking disabled for faster script generation.
+  - The hosted DeepSeek key is stored only as the Cloudflare Worker secret `DEEPSEEK_API_KEY`. A user-supplied key is stored only in that user's localStorage (`cueprompt-ai`). No key is shipped in browser assets.
+  - Bring-your-own-key mode continues to support Qwen/DashScope, DeepSeek, OpenAI, Claude and custom OpenAI-compatible endpoints.
 - **Internationalization.** 15 UI languages: en, zh-CN, zh-TW, es, pt, fr, de, ja, ko, ru, ar (RTL), hi, id, vi, th.
   - The language is auto-detected from `navigator.language`, can be switched in the header, and the choice persists. `<html lang/dir>` is updated.
   - User text uses `dir="auto"`.
@@ -61,9 +58,9 @@ Open http://localhost:5173. Camera, microphone and speech recognition need `loca
 
 ## Privacy (what leaves the device)
 
-- Scripts, settings and recordings stay in the browser. Hosted AI is the exception: only the text needed for the requested generation is sent through CuePrompt's Worker to Alibaba Cloud Model Studio; the Worker does not store the text.
+- Scripts, settings and recordings stay in the browser. Hosted AI is the exception: only the text needed for the requested generation is sent through CuePrompt's Worker to DeepSeek; the Worker does not store the text.
 - **Smart Follow** sends microphone audio to the *browser vendor's* speech service (Google for Chrome, Microsoft for Edge, Apple for Safari). Chrome's service is generally not reachable from mainland China without a VPN; CuePrompt then falls back to Steady mode.
-- **AI writer** sends the chosen text through CuePrompt's Worker to Alibaba Cloud Model Studio by default. In bring-your-own-key mode, it goes straight from the browser to the provider the user configures.
+- **AI writer** sends the chosen text through CuePrompt's Worker to DeepSeek by default. In bring-your-own-key mode, it goes straight from the browser to the provider the user configures.
 
 ## Project layout and build
 
