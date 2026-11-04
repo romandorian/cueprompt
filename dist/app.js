@@ -769,7 +769,7 @@ $('review-discard').onclick = () => closeReview(false);
 $('close-review').onclick = () => closeReview(false);
 $('review-dialog').addEventListener('cancel', e => { e.preventDefault(); closeReview(false); });
 
-/* ---------- AI writer (bring your own key) ---------- */
+/* ---------- AI writer (CuePrompt-hosted Qwen, optional bring-your-own-key) ---------- */
 const AI_PRESETS = {
   dashscope: { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus', protocol: 'openai' },
   dashscopeIntl: { base: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus', protocol: 'openai' },
@@ -794,7 +794,7 @@ function fillAiLanguages() {
 $('ai-target').onchange = () => { $('ai-target').dataset.touched = '1'; };
 function openAi() {
   $('ai-base').value = ai.base; $('ai-model').value = ai.model; $('ai-key').value = ai.key; $('ai-preset').value = presetFor(ai.base);
-  $('ai-connection').open = !ai.key; $('ai-error').hidden = true;
+  $('ai-connection').open = false; $('ai-error').hidden = true;
   $('ai-dialog').showModal();
 }
 function saveAi() { ai.base = $('ai-base').value.trim(); ai.model = $('ai-model').value.trim(); ai.key = $('ai-key').value.trim(); ai.protocol = AI_PRESETS[$('ai-preset').value]?.protocol || 'openai'; store.set('cueprompt-ai', ai); }
@@ -828,16 +828,33 @@ function aiMessages() {
   }
   return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Translate the following teleprompter script into ${$('ai-target').value}. Make it sound natural when spoken. Keep '## ' headings and keep [pause]/[slow] markers in place with the bracket keywords in English.\n\nSCRIPT:\n${script}` }];
 }
+function hostedAiPayload() {
+  const payload = { mode: aiTab };
+  if (aiTab === 'generate') return Object.assign(payload, {
+    topic: $('ai-topic').value.trim(), durationMinutes: Number($('ai-duration').value) || 1,
+    language: $('ai-language').value, tone: $('ai-tone').value
+  });
+  payload.script = $('script').value.trim();
+  if (aiTab === 'rewrite') Object.assign(payload, { rewriteMode: $('ai-rewrite-mode').value, instruction: $('ai-instruction').value.trim() });
+  else payload.target = $('ai-target').value;
+  return payload;
+}
+let aiDeviceId = store.get('cueprompt-ai-device', '');
+if (!/^[a-zA-Z0-9_-]{12,100}$/.test(aiDeviceId)) {
+  aiDeviceId = crypto.randomUUID().replaceAll('-', '');
+  store.set('cueprompt-ai-device', aiDeviceId);
+}
 $('ai-run').onclick = async () => {
   saveAi(); const err = $('ai-error'); err.hidden = true;
   const fail = msg => { err.textContent = msg; err.hidden = false; };
-  if (!ai.base || !ai.model || !ai.key) { $('ai-connection').open = true; fail(t('ai.needKey')); return; }
   let messages; try { messages = aiMessages(); } catch (e) { fail(e.message); return; }
   const btn = $('ai-run'); btn.disabled = true; btn.lastElementChild.textContent = t('ai.running');
   try {
-    let res;
+    let res, hosted = !ai.key;
     try {
-      if (ai.protocol === 'anthropic') {
+      if (hosted) {
+        res = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CuePrompt-Device': aiDeviceId }, body: JSON.stringify(hostedAiPayload()) });
+      } else if (ai.protocol === 'anthropic') {
         const system = messages.find(m => m.role === 'system')?.content || '';
         const userMessages = messages.filter(m => m.role !== 'system');
         res = await fetch(ai.base.replace(/\/+$/, '') + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': ai.key, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: ai.model, system, messages: userMessages, max_tokens: 2400, temperature: 0.7 }) });
@@ -845,16 +862,28 @@ $('ai-run').onclick = async () => {
         res = await fetch(ai.base.replace(/\/+$/, '') + '/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ai.key }, body: JSON.stringify({ model: ai.model, messages, temperature: 0.7 }) });
       }
     }
-    catch { fail(ai.protocol === 'anthropic' ? 'Claude’s direct API blocks browser requests. Use a CORS-enabled proxy as the Base URL, or choose another provider.' : t('ai.errorCors')); return; }
+    catch { fail(hosted ? t('ai.errorHosted') : ai.protocol === 'anthropic' ? 'Claude’s direct API blocks browser requests. Use a CORS-enabled proxy as the Base URL, or choose another provider.' : t('ai.errorCors')); return; }
     let data = null; try { data = await res.json(); } catch { }
-    if (!res.ok) { fail(t('ai.errorHttp', { msg: (data && (data.error?.message || data.message)) || res.status + ' ' + res.statusText })); return; }
-    let text = ai.protocol === 'anthropic' ? (data?.content || []).filter(part => part.type === 'text').map(part => part.text).join('\n') : (data?.choices?.[0]?.message?.content || '');
+    if (!res.ok) {
+      const code = data?.error?.code;
+      fail(hosted ? (code === 'RATE_LIMITED' ? t('ai.rateLimited') : code === 'AI_NOT_CONFIGURED' ? t('ai.notConfigured') : t('ai.errorHosted')) : t('ai.errorHttp', { msg: (data && (data.error?.message || data.message)) || res.status + ' ' + res.statusText }));
+      return;
+    }
+    let text = hosted ? data?.text : ai.protocol === 'anthropic' ? (data?.content || []).filter(part => part.type === 'text').map(part => part.text).join('\n') : (data?.choices?.[0]?.message?.content || '');
     text = text.replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
     if (!text) { fail(t('ai.empty')); return; }
     $('ai-result').value = text; $('ai-result-wrap').hidden = false;
   } finally { btn.disabled = false; btn.lastElementChild.textContent = t('ai.run'); }
 };
-$('ai-replace').onclick = () => { const s = current(); s.text = $('ai-result').value; s.updatedAt = now(); saveLibrary(); openScript(s.id); $('ai-dialog').close(); };
+$('ai-replace').onclick = async () => {
+  const s = current();
+  s.text = $('ai-result').value;
+  s.updatedAt = now();
+  saveLibrary();
+  openScript(s.id);
+  $('ai-dialog').close();
+  await startPerformance();
+};
 $('ai-new').onclick = () => { const first = $('ai-result').value.split('\n').find(l => l.trim()) || t('script.untitled'); addScript(first.replace(/^#+\s*/, '').slice(0, 60), $('ai-result').value); $('ai-dialog').close(); };
 
 /* ---------- help & keyboard ---------- */
@@ -998,20 +1027,37 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
       if (incoming.read) setTimeout(() => startPerformance(), 80);
     }
   } catch { /* Existing scripts remain available if handoff storage is unavailable. */ }
-  const creatorLinks = document.createElement('div');
+  const creatorCopy = document.documentElement.lang === 'zh-CN' ? {
+    eyebrow: '继续创作', title: '接下来想做什么？', intro: '从写稿、整理到发布和视频处理，选择下一步即可。',
+    templates: ['口播脚本模板', '按场景生成一份可以直接修改和排练的脚本。', '开始写稿'],
+    cleaner: ['转录稿清理', '把转录或原始文字整理成更自然的口播稿。', '整理文字'],
+    publish: ['发布文案助手', '用当前稿件生成标题、简介、标签和发布清单。', '准备发布'],
+    video: ['视频压缩转换', '在本设备压缩录制视频，或转换视频格式。', '处理视频']
+  } : document.documentElement.lang === 'zh-TW' ? {
+    eyebrow: '繼續創作', title: '接下來想做什麼？', intro: '從寫稿、整理到發佈和影片處理，選擇下一步即可。',
+    templates: ['口播腳本範本', '按情境建立一份可以直接修改和排練的腳本。', '開始寫稿'],
+    cleaner: ['轉錄稿整理', '把轉錄或原始文字整理成更自然的口播稿。', '整理文字'],
+    publish: ['發佈文案助手', '用目前稿件建立標題、簡介、標籤和發佈清單。', '準備發佈'],
+    video: ['影片壓縮轉換', '在本裝置壓縮錄製影片，或轉換影片格式。', '處理影片']
+  } : {
+    eyebrow: 'KEEP CREATING', title: 'What would you like to do next?', intro: 'Move from writing and cleanup to publishing or video delivery.',
+    templates: ['Script builder', 'Build a structured speaking script from a ready-made format.', 'Start a script'],
+    cleaner: ['Transcript cleaner', 'Turn a transcript or rough source text into a clean speaking draft.', 'Clean up text'],
+    publish: ['Publishing assistant', 'Create a title, description, tags and checklist from this script.', 'Prepare publishing copy'],
+    video: ['Video compressor', 'Compress a recording or convert its format on this device.', 'Process a video']
+  };
+  const creatorLinks = document.createElement('section');
   creatorLinks.className = 'creator-links';
-  creatorLinks.innerHTML = '<a href="/script-templates/">Script builder ↗</a><a href="/script-extractor/">Transcript cleaner ↗</a><a href="/publishing-assistant/">Publishing assistant ↗</a>';
+  creatorLinks.innerHTML = `<div class="creator-links-head"><span>${creatorCopy.eyebrow}</span><strong>${creatorCopy.title}</strong><p>${creatorCopy.intro}</p></div><div class="creator-tools"><a class="creator-tool" href="/script-templates/"><strong>${creatorCopy.templates[0]}</strong><span>${creatorCopy.templates[1]}</span><b>${creatorCopy.templates[2]} →</b></a><a class="creator-tool" href="/script-extractor/"><strong>${creatorCopy.cleaner[0]}</strong><span>${creatorCopy.cleaner[1]}</span><b>${creatorCopy.cleaner[2]} →</b></a><button class="creator-tool" id="prepare-publishing" type="button"><strong>${creatorCopy.publish[0]}</strong><span>${creatorCopy.publish[1]}</span><b>${creatorCopy.publish[2]} →</b></button><a class="creator-tool" href="/video-converter/"><strong>${creatorCopy.video[0]}</strong><span>${creatorCopy.video[1]}</span><b>${creatorCopy.video[2]} →</b></a></div>`;
   document.querySelector('.template-box').after(creatorLinks);
   document.querySelectorAll('[data-open-camera]').forEach(link => link.addEventListener('click', () => {
     setTimeout(() => $('camera-tab').click(), 80);
   }));
-  const videoLink = document.createElement('a'); videoLink.href = '/video-converter/'; videoLink.textContent = 'Video compressor ↗'; creatorLinks.append(videoLink);
-  const publishButton = document.createElement('button'); publishButton.className = 'ghost-button'; publishButton.textContent = 'Prepare publishing copy →';
+  const publishButton = $('prepare-publishing');
   publishButton.onclick = async () => {
     try { await CueWorkflow.save('publish', {title:$('script-title').value, text:$('script').value}); location.href = '/publishing-assistant/'; }
     catch { toast('Could not transfer the draft. Download or copy your script first.'); }
   };
-  creatorLinks.append(publishButton);
   const processButton = document.createElement('button'); processButton.className = 'ghost-button'; processButton.textContent = 'Compress / convert →';
   processButton.onclick = async () => {
     if (!take) return;

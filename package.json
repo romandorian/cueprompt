@@ -1,0 +1,14 @@
+{
+  "name": "cueprompt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "python3 tools/build_pages.py",
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "check": "node --check dist/app.js && node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.36.0"
+  }
+}
