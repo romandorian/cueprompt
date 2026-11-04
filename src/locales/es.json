@@ -207,7 +207,7 @@
 "lib.badBackup": "Este archivo no es una copia de CuePrompt.",
 "ai.title": "Redactor IA",
 "ai.badge": "Sin clave API",
-"ai.intro": "CuePrompt AI usa Alibaba Qwen de forma predeterminada y no requiere configuración. También puedes usar tu propio proveedor abajo.",
+"ai.intro": "Genera de forma predeterminada sin configuración. También puedes usar tu propio proveedor abajo.",
 "ai.settings": "Avanzado: usar tu propia clave API",
 "ai.baseUrl": "URL base",
 "ai.model": "Modelo",

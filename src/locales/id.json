@@ -207,7 +207,7 @@
 "lib.badBackup": "File ini bukan cadangan CuePrompt.",
 "ai.title": "Penulis AI",
 "ai.badge": "Tanpa kunci API",
-"ai.intro": "CuePrompt AI memakai Alibaba Qwen secara default tanpa perlu pengaturan. Anda juga dapat memakai penyedia sendiri di bawah.",
+"ai.intro": "Buat secara default tanpa pengaturan. Anda juga dapat memakai penyedia sendiri di bawah.",
 "ai.settings": "Lanjutan: gunakan kunci API sendiri",
 "ai.baseUrl": "URL dasar",
 "ai.model": "Model",

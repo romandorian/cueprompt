@@ -207,7 +207,7 @@
 "lib.badBackup": "このファイルは CuePrompt のバックアップではありません。",
 "ai.title": "AI ライター",
 "ai.badge": "API キー不要",
-"ai.intro": "CuePrompt AI は標準で Alibaba Qwen を使用し、設定なしで生成できます。下で自分のプロバイダーも利用できます。",
+"ai.intro": "標準では設定なしで生成できます。下で自分のプロバイダーも利用できます。",
 "ai.settings": "詳細設定：自分の API キーを使用",
 "ai.baseUrl": "ベース URL",
 "ai.model": "モデル",

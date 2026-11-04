@@ -207,7 +207,7 @@
 "lib.badBackup": "Diese Datei ist kein CuePrompt-Backup.",
 "ai.title": "KI-Texter",
 "ai.badge": "Kein API-Schlüssel nötig",
-"ai.intro": "CuePrompt AI verwendet standardmäßig Alibaba Qwen und benötigt keine Einrichtung. Unten kannst du auch deinen eigenen Anbieter verwenden.",
+"ai.intro": "Standardmäßig ohne Einrichtung generieren. Unten kannst du auch deinen eigenen Anbieter verwenden.",
 "ai.settings": "Erweitert: eigenen API-Schlüssel verwenden",
 "ai.baseUrl": "Basis-URL",
 "ai.model": "Modell",

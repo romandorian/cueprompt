@@ -207,7 +207,7 @@
 "lib.badBackup": "Ce fichier n'est pas une sauvegarde CuePrompt.",
 "ai.title": "Rédacteur IA",
 "ai.badge": "Aucune clé API requise",
-"ai.intro": "CuePrompt AI utilise Alibaba Qwen par défaut et ne nécessite aucune configuration. Vous pouvez aussi utiliser votre propre fournisseur ci-dessous.",
+"ai.intro": "Générez par défaut sans configuration. Vous pouvez aussi utiliser votre propre fournisseur ci-dessous.",
 "ai.settings": "Avancé : utiliser votre propre clé API",
 "ai.baseUrl": "URL de base",
 "ai.model": "Modèle",

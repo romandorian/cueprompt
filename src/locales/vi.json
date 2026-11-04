@@ -207,7 +207,7 @@
 "lib.badBackup": "Tệp này không phải bản sao lưu CuePrompt.",
 "ai.title": "Trợ lý viết AI",
 "ai.badge": "Không cần khóa API",
-"ai.intro": "CuePrompt AI mặc định dùng Alibaba Qwen và không cần thiết lập. Bạn cũng có thể dùng nhà cung cấp riêng bên dưới.",
+"ai.intro": "Mặc định tạo nội dung mà không cần thiết lập. Bạn cũng có thể dùng nhà cung cấp riêng bên dưới.",
 "ai.settings": "Nâng cao: dùng khóa API riêng",
 "ai.baseUrl": "URL gốc",
 "ai.model": "Mô hình",

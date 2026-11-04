@@ -221,7 +221,7 @@
 "lib.badBackup": "This file isn't a CuePrompt backup.",
 "ai.title": "AI writer",
 "ai.badge": "No API key needed",
-"ai.intro": "CuePrompt AI uses Alibaba Qwen by default. No setup is needed; advanced users can still use their own provider below.",
+"ai.intro": "Generate by default with no setup. Advanced users can still use their own provider below.",
 "ai.settings": "Advanced: use your own API key",
 "ai.baseUrl": "Base URL",
 "ai.model": "Model",

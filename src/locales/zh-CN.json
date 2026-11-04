@@ -207,7 +207,7 @@
 "lib.badBackup": "这不是 CuePrompt 的备份文件。",
 "ai.title": "AI 写稿",
 "ai.badge": "无需 API 密钥",
-"ai.intro": "默认使用 CuePrompt 提供的阿里云通义千问，无需配置即可生成。高级用户仍可在下方使用自己的服务商。",
+"ai.intro": "默认无需配置即可生成。高级用户仍可在下方使用自己的服务商。",
 "ai.settings": "高级设置：使用自己的 API 密钥",
 "ai.baseUrl": "接口地址（Base URL）",
 "ai.model": "模型",
