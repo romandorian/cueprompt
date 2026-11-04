@@ -53,6 +53,35 @@ readingButton.before(floatingButton);
 const exportScriptButton = $('export-script');
 exportScriptButton.classList.add('editor-export-button');
 $('ai-button').after(exportScriptButton);
+const editorSurface = document.querySelector('.editor-surface');
+const editorBar = editorSurface.querySelector('.editor-bar');
+const editorLocale = document.documentElement.lang === 'zh-CN' ? { expand: '放大编辑', title: '专注编辑稿件', close: '完成' } :
+  document.documentElement.lang === 'zh-TW' ? { expand: '放大編輯', title: '專注編輯稿件', close: '完成' } :
+  { expand: 'Expand editor', title: 'Focus editor', close: 'Done' };
+const editorExpandButton = document.createElement('button');
+editorExpandButton.type = 'button'; editorExpandButton.className = 'editor-expand-button';
+editorExpandButton.setAttribute('aria-label', editorLocale.expand); editorExpandButton.title = editorLocale.expand;
+editorExpandButton.innerHTML = '<span aria-hidden="true">⛶</span><span>' + editorLocale.expand + '</span>';
+editorBar.append(editorExpandButton);
+const editorExpandDialog = document.createElement('dialog');
+editorExpandDialog.className = 'editor-expand-dialog';
+editorExpandDialog.innerHTML = '<div class="editor-expand-head"><div><span>✎</span><strong>' + editorLocale.title + '</strong></div><button type="button" class="editor-expand-done">' + editorLocale.close + ' <span aria-hidden="true">×</span></button></div><div class="editor-expand-body"></div>';
+document.body.append(editorExpandDialog);
+function openExpandedEditor() {
+  if (editorExpandDialog.open) return;
+  editorExpandDialog.querySelector('.editor-expand-body').append($('script'));
+  editorExpandDialog.showModal();
+  $('script').focus();
+}
+function closeExpandedEditor() {
+  if (!editorExpandDialog.open) return;
+  editorSurface.append($('script'));
+  editorExpandDialog.close();
+}
+editorExpandButton.onclick = openExpandedEditor;
+$('script').addEventListener('click', openExpandedEditor);
+editorExpandDialog.querySelector('.editor-expand-done').onclick = closeExpandedEditor;
+editorExpandDialog.addEventListener('cancel', e => { e.preventDefault(); closeExpandedEditor(); });
 const legacy = store.get('cueprompt-v1', null);
 const settings = Object.assign({ speed: 40, size: 36, mirror: false, mode: 'steady', speechLang: '', uiLang: '', camera: '', mic: '', resolution: 'auto', format: 'auto', countdown: true, mirrorCamera: true },
   legacy && typeof legacy === 'object' ? { speed: legacy.speed || 40, size: legacy.size || 36, mirror: !!legacy.mirror } : {},
