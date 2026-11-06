@@ -2,6 +2,14 @@ const AI_SYSTEM = "You are a scriptwriter for teleprompter videos and talks. Wri
 const CJK_LANGUAGES = new Set(['Simplified Chinese', 'Traditional Chinese', 'Japanese']);
 const ALLOWED_TONES = new Set(['friendly', 'professional', 'energetic', 'calm']);
 const ALLOWED_LANGUAGES = new Set(['English', 'Simplified Chinese', 'Traditional Chinese', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Russian', 'Arabic', 'Hindi', 'Indonesian', 'Vietnamese', 'Thai', 'Turkish', 'Dutch', 'Polish']);
+const CANONICAL_ORIGIN = 'https://cueprompt.io';
+
+export function canonicalRedirect(requestUrl) {
+  const url = new URL(requestUrl);
+  const productionHost = url.hostname === 'cueprompt.io' || url.hostname === 'www.cueprompt.io' || url.hostname.endsWith('.workers.dev');
+  if (!productionHost || (url.protocol === 'https:' && url.hostname === 'cueprompt.io')) return null;
+  return new URL(`${url.pathname}${url.search}`, CANONICAL_ORIGIN).href;
+}
 
 function json(data, status = 200, headers = {}) {
   return Response.json(data, { status, headers: { 'Cache-Control': 'no-store', ...headers } });
@@ -97,6 +105,8 @@ async function generate(request, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const redirect = canonicalRedirect(url);
+    if (redirect) return Response.redirect(redirect, 301);
     if (url.pathname === '/api/ai/generate') return generate(request, env);
     if (url.pathname.startsWith('/api/')) return json({ error: { code: 'NOT_FOUND' } }, 404);
     return env.ASSETS.fetch(request);

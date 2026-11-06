@@ -1,6 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMessages } from '../worker/index.js';
+import worker, { buildMessages, canonicalRedirect } from '../worker/index.js';
+
+test('redirects every production URL variant to the HTTPS apex', async () => {
+  const cases = [
+    ['http://cueprompt.io/', 'https://cueprompt.io/'],
+    ['http://cueprompt.io/privacy/?source=test', 'https://cueprompt.io/privacy/?source=test'],
+    ['http://www.cueprompt.io/zh/', 'https://cueprompt.io/zh/'],
+    ['https://www.cueprompt.io/teleprompter/', 'https://cueprompt.io/teleprompter/'],
+    ['https://cueprompt.romandorian068.workers.dev/terms/', 'https://cueprompt.io/terms/']
+  ];
+  for (const [source, destination] of cases) {
+    assert.equal(canonicalRedirect(source), destination);
+    const response = await worker.fetch(new Request(source), { ASSETS: { fetch: assert.fail } });
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.get('location'), destination);
+  }
+});
+
+test('serves the canonical HTTPS host without redirecting', async () => {
+  assert.equal(canonicalRedirect('https://cueprompt.io/privacy/?source=test'), null);
+  const expected = new Response('asset');
+  const response = await worker.fetch(new Request('https://cueprompt.io/privacy/'), { ASSETS: { fetch: () => expected } });
+  assert.equal(response, expected);
+});
 
 test('builds a bounded Chinese generation prompt', () => {
   const messages = buildMessages({ mode: 'generate', topic: '介绍 CuePrompt', durationMinutes: 1, language: 'Simplified Chinese', tone: 'friendly' });

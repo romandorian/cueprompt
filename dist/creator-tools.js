@@ -342,9 +342,89 @@
       },
     };
     const pack = PACKS[scriptLanguage] || PACKS.en;
-    const headings = pack.structures[value('scene')];
+    const requestedFormat = value('scene');
+    const format = ['shorts', 'tiktok', 'reels'].includes(requestedFormat) ? 'youtube' : requestedFormat;
+    const headings = pack.structures[format];
     const body = points.split('\n').filter(s=>s.trim()).map((s,i)=>`## ${headings[i] || pack.extra}\n${s.trim()}`).join('\n\n');
-    output(topic, `## ${pack.opening}\n${pack.openings[value('scene')]}\n\n[pause]\n\n${body}\n\n## ${pack.closing}\n[slow] ${action || pack.defaultAction}`);
+    const shortOpeningsByLanguage = {
+      en: {
+        shorts: `Here is what ${audience || 'you'} will get from ${topic} in under a minute.`,
+        tiktok: `If ${topic} keeps slowing you down, try this before you scroll.`,
+        reels: `Here is a quick visual way to understand ${topic}.`
+      },
+      zh: {
+        shorts: `不到一分钟，${audience || '你'}就能了解${topic}最重要的结果。`,
+        tiktok: `如果${topic}总让你卡住，先试试这个方法再继续刷。`,
+        reels: `用一个直观画面，快速看懂${topic}。`
+      },
+      'zh-tw': {
+        shorts: `不到一分鐘，${audience || '你'}就能掌握${topic}最重要的結果。`,
+        tiktok: `如果${topic}總讓你卡住，先試試這個方法再繼續滑。`,
+        reels: `用一個直觀畫面，快速看懂${topic}。`
+      },
+      ja: {
+        shorts: `60秒以内で、${audience || 'あなた'}が${topic}から得られる結果を紹介します。`,
+        tiktok: `${topic}で何度もつまずくなら、次へスクロールする前にこれを試してください。`,
+        reels: `${topic}を視覚的にすばやく理解する方法を紹介します。`
+      },
+      ko: {
+        shorts: `60초 안에 ${audience || '시청자'}가 ${topic}에서 얻을 핵심 결과를 보여 드립니다.`,
+        tiktok: `${topic} 때문에 계속 막힌다면 다음으로 넘기기 전에 이 방법을 써 보세요.`,
+        reels: `${topic}을 빠르게 이해할 수 있는 시각적인 방법을 보여 드립니다.`
+      },
+      es: {
+        shorts: `En menos de un minuto, ${audience || 'tu audiencia'} verá el resultado principal de ${topic}.`,
+        tiktok: `Si ${topic} sigue frenándote, prueba esto antes de seguir deslizando.`,
+        reels: `Esta es una forma visual y rápida de entender ${topic}.`
+      },
+      pt: {
+        shorts: `Em menos de um minuto, ${audience || 'seu público'} verá o principal resultado de ${topic}.`,
+        tiktok: `Se ${topic} continua atrasando você, tente isto antes de seguir rolando.`,
+        reels: `Esta é uma forma visual e rápida de entender ${topic}.`
+      },
+      fr: {
+        shorts: `En moins d’une minute, ${audience || 'votre public'} découvrira le résultat principal de ${topic}.`,
+        tiktok: `Si ${topic} continue de vous ralentir, essayez ceci avant de poursuivre votre défilement.`,
+        reels: `Voici une façon visuelle et rapide de comprendre ${topic}.`
+      },
+      de: {
+        shorts: `In weniger als einer Minute sieht ${audience || 'deine Zielgruppe'} das wichtigste Ergebnis zu ${topic}.`,
+        tiktok: `Wenn ${topic} dich immer wieder bremst, probiere das vor dem Weiterscrollen.`,
+        reels: `So lässt sich ${topic} schnell und anschaulich verstehen.`
+      },
+      ru: {
+        shorts: `Меньше чем за минуту ${audience || 'зритель'} увидит главный результат по теме «${topic}».`,
+        tiktok: `Если ${topic} постоянно вас тормозит, попробуйте это перед следующим свайпом.`,
+        reels: `Вот наглядный и быстрый способ разобраться в теме «${topic}».`
+      },
+      ar: {
+        shorts: `خلال أقل من دقيقة سيعرف ${audience || 'المشاهد'} أهم نتيجة حول ${topic}.`,
+        tiktok: `إذا كان ${topic} يبطئك باستمرار، فجرّب هذا قبل مواصلة التمرير.`,
+        reels: `هذه طريقة بصرية وسريعة لفهم ${topic}.`
+      },
+      hi: {
+        shorts: `एक मिनट से कम में ${audience || 'दर्शक'} को ${topic} का मुख्य परिणाम मिलेगा।`,
+        tiktok: `अगर ${topic} आपको बार-बार रोकता है, तो आगे स्क्रॉल करने से पहले यह आज़माएँ।`,
+        reels: `${topic} को जल्दी और दृश्य रूप में समझने का यह आसान तरीका है।`
+      },
+      id: {
+        shorts: `Dalam kurang dari satu menit, ${audience || 'penonton'} akan melihat hasil utama dari ${topic}.`,
+        tiktok: `Jika ${topic} terus menghambat Anda, coba ini sebelum lanjut menggulir.`,
+        reels: `Ini cara visual dan cepat untuk memahami ${topic}.`
+      },
+      vi: {
+        shorts: `Trong chưa đầy một phút, ${audience || 'người xem'} sẽ thấy kết quả chính về ${topic}.`,
+        tiktok: `Nếu ${topic} liên tục làm bạn chậm lại, hãy thử cách này trước khi cuộn tiếp.`,
+        reels: `Đây là cách trực quan và nhanh chóng để hiểu ${topic}.`
+      },
+      th: {
+        shorts: `ภายในไม่ถึงหนึ่งนาที ${audience || 'ผู้ชม'} จะเห็นผลลัพธ์สำคัญของ ${topic}.`,
+        tiktok: `หาก ${topic} ทำให้คุณช้าลงอยู่เสมอ ลองวิธีนี้ก่อนเลื่อนต่อ`,
+        reels: `นี่คือวิธีที่เห็นภาพและรวดเร็วในการเข้าใจ ${topic}`
+      }
+    };
+    const shortOpenings = shortOpeningsByLanguage[scriptLanguage] || shortOpeningsByLanguage.en;
+    output(topic, `## ${pack.opening}\n${shortOpenings[requestedFormat] || pack.openings[format]}\n\n[pause]\n\n${body}\n\n## ${pack.closing}\n[slow] ${action || pack.defaultAction}`);
   };
   document.querySelectorAll('[data-template-scene]').forEach(card => card.onclick = () => {
     if (!el('scene')) return;
@@ -352,6 +432,45 @@
     document.querySelectorAll('[data-template-scene]').forEach(item => item.classList.toggle('selected', item === card));
     el('topic').focus({preventScroll:true}); el('topic').scrollIntoView({behavior:'smooth', block:'center'});
   });
+  if (el('scene')) {
+    const sceneLabels = locale === 'th'
+      ? [['shorts','YouTube Shorts'], ['tiktok','วิดีโอ TikTok'], ['reels','Instagram Reel']]
+      : locale === 'vi'
+      ? [['shorts','YouTube Shorts'], ['tiktok','Video TikTok'], ['reels','Instagram Reel']]
+      : locale === 'id'
+      ? [['shorts','YouTube Shorts'], ['tiktok','Video TikTok'], ['reels','Instagram Reel']]
+      : locale === 'hi'
+      ? [['shorts','YouTube Shorts'], ['tiktok','TikTok वीडियो'], ['reels','Instagram Reel']]
+      : locale === 'ar'
+      ? [['shorts','YouTube Shorts'], ['tiktok','فيديو TikTok'], ['reels','Instagram Reel']]
+      : locale === 'ru'
+      ? [['shorts','YouTube Shorts'], ['tiktok','Видео TikTok'], ['reels','Instagram Reel']]
+      : locale === 'de'
+      ? [['shorts','YouTube Shorts'], ['tiktok','TikTok-Video'], ['reels','Instagram Reel']]
+      : locale === 'fr'
+      ? [['shorts','YouTube Shorts'], ['tiktok','Vidéo TikTok'], ['reels','Instagram Reel']]
+      : locale === 'pt'
+      ? [['shorts','YouTube Shorts'], ['tiktok','Vídeo para TikTok'], ['reels','Instagram Reel']]
+      : locale === 'es'
+      ? [['shorts','YouTube Shorts'], ['tiktok','Vídeo de TikTok'], ['reels','Instagram Reel']]
+      : locale === 'ko'
+      ? [['shorts','YouTube Shorts'], ['tiktok','TikTok 영상'], ['reels','Instagram Reels']]
+      : locale === 'ja'
+      ? [['shorts','YouTube Shorts'], ['tiktok','TikTok 動画'], ['reels','Instagram リール']]
+      : locale.toLowerCase() === 'zh-tw'
+      ? [['shorts','YouTube Shorts'], ['tiktok','TikTok 影片'], ['reels','Instagram Reel']]
+      : isZh()
+      ? [['shorts','YouTube Shorts'], ['tiktok','TikTok 视频'], ['reels','Instagram Reel']]
+      : [['shorts','YouTube Shorts'], ['tiktok','TikTok video'], ['reels','Instagram Reel']];
+    sceneLabels.forEach(([key, label]) => {
+      if (![...el('scene').options].some(option => option.value === key)) el('scene').add(new Option(label, key));
+    });
+    const requestedScene = new URLSearchParams(location.search).get('scene');
+    if ([...el('scene').options].some(option => option.value === requestedScene)) {
+      el('scene').value = requestedScene;
+      document.querySelectorAll('[data-template-scene]').forEach(card => card.classList.toggle('selected', card.dataset.templateScene === requestedScene));
+    }
+  }
   if (el('clean')) {
     el('clean').onclick = () => { if (!value('transcript')) { status('Paste or import a transcript first.'); return; } output(isKo() ? '정리된 녹취록' : 'Cleaned transcript', clean(value('transcript'))); };
     el('transcript-file').onchange = async event => {

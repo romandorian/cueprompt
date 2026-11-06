@@ -43,6 +43,11 @@
     $('media-preset-note').textContent = ko ? koNotes[$('media-preset').value] : preset.note;
   };
   $('media-preset').onchange = applyPreset;
+  const requestedPreset = new URLSearchParams(location.search).get('preset');
+  if (requestedPreset && Object.hasOwn(presets, requestedPreset)) {
+    $('media-preset').value = requestedPreset;
+    applyPreset();
+  }
   $('media-cancel').onclick = () => { cancelled = true; ff?.terminate(); status('Cancelling…'); };
   $('convert').onclick = async () => {
     if (busy) return;

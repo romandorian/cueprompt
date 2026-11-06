@@ -12,6 +12,36 @@ from site_i18n import LOCALES
 from site_i18n import PUBLIC_PAGE_SLUGS, absolute_url, hreflang_links, page_path
 from public_copy_ko import localize as localize_korean_tool
 from public_copy_locales import localize as localize_remaining_public_copy
+from scene_guide_locales import descriptions as scene_guide_descriptions
+from scene_guide_locales import localize as localize_scene_guide
+from core_scene_content import CORE_SCENES, render as render_core_scene
+from short_scene_content import SHORT_SCENES, render as render_short_scene
+from short_scene_locales import localize as localize_short_scene
+from short_scene_ja import localize as localize_short_scene_ja
+from short_scene_ko import localize as localize_short_scene_ko
+from short_scene_es import localize as localize_short_scene_es
+from short_scene_pt import localize as localize_short_scene_pt
+from short_scene_fr import localize as localize_short_scene_fr
+from short_scene_de import localize as localize_short_scene_de
+from short_scene_ru import localize as localize_short_scene_ru
+from short_scene_ar import localize as localize_short_scene_ar
+from short_scene_hi import localize as localize_short_scene_hi
+from short_scene_id import localize as localize_short_scene_id
+from short_scene_vi import localize as localize_short_scene_vi
+from short_scene_th import localize as localize_short_scene_th
+from core_scene_locales import localize as localize_core_scene
+from core_scene_ja import localize as localize_core_scene_ja
+from core_scene_ko import localize as localize_core_scene_ko
+from core_scene_es import localize as localize_core_scene_es
+from core_scene_pt import localize as localize_core_scene_pt
+from core_scene_fr import localize as localize_core_scene_fr
+from core_scene_de import localize as localize_core_scene_de
+from core_scene_ru import localize as localize_core_scene_ru
+from core_scene_ar import localize as localize_core_scene_ar
+from core_scene_hi import localize as localize_core_scene_hi
+from core_scene_id import localize as localize_core_scene_id
+from core_scene_vi import localize as localize_core_scene_vi
+from core_scene_th import localize as localize_core_scene_th
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, DIST = os.path.join(ROOT, 'src'), os.path.join(ROOT, 'dist')
@@ -166,6 +196,7 @@ def localize_structured_data(page, title, description, url, locale):
 def verify_generated_seo():
     """Fail the build before stale or off-origin SEO metadata can be deployed."""
     errors = []
+    landing_metadata = {}
     for path in sorted(os.path.join(root, name) for root, _, names in os.walk(DIST) for name in names if name == 'index.html'):
         with open(path, encoding='utf-8') as f:
             page = f.read()
@@ -176,6 +207,54 @@ def verify_generated_seo():
             errors.append(f'{os.path.relpath(path, ROOT)}: canonical outside {SITE}')
         if 'chatgpt.site' in page:
             errors.append(f'{os.path.relpath(path, ROOT)}: contains retired preview domain')
+        slug = os.path.basename(os.path.dirname(path))
+        if slug in LANDING:
+            title = re.search(r'<title\b[^>]*>(.*?)</title>', page, flags=re.S)
+            description = re.search(r'<meta\b[^>]*\bname="description"[^>]*\bcontent="([^"]*)"[^>]*>', page)
+            if not title or not description:
+                errors.append(f'{os.path.relpath(path, ROOT)}: missing landing-page title or description')
+            else:
+                locale_dir = os.path.relpath(os.path.dirname(os.path.dirname(path)), DIST)
+                landing_metadata.setdefault(locale_dir, {}).setdefault((title.group(1), description.group(1)), []).append(slug)
+            if re.search(r'<(?:title|meta)\b[^>]*data-i18n(?:-content)?="meta\.(?:title|description)"', page):
+                errors.append(f'{os.path.relpath(path, ROOT)}: landing metadata still uses homepage i18n hooks')
+    for locale_dir, values in landing_metadata.items():
+        for slugs in values.values():
+            if len(slugs) > 1:
+                errors.append(f'{locale_dir}: duplicate landing metadata for {", ".join(sorted(slugs))}')
+    # A core scene is indexable only when it has an editorial workflow, real
+    # product entry points and visible FAQs. This prevents a future keyword
+    # slug from entering the sitemap as a title-only template copy.
+    for slug in CORE_SCENES:
+        path = os.path.join(DIST, slug, 'index.html')
+        with open(path, encoding='utf-8') as f:
+            page = f.read()
+        guide = re.search(rf'<section class="landing scene-guide" data-scene-guide="{re.escape(slug)}">(.*?)</section>', page, flags=re.S)
+        if not guide:
+            errors.append(f'{slug}: missing unique scene workflow')
+            continue
+        visible = re.sub(r'<[^>]+>', ' ', guide.group(1))
+        if len(visible.split()) < 180:
+            errors.append(f'{slug}: scene workflow is too thin')
+        if guide.group(1).count('<details>') < 3:
+            errors.append(f'{slug}: needs at least three visible FAQs')
+        if 'script-templates/?scene=' not in guide.group(1) and 'data-open-camera' not in guide.group(1):
+            errors.append(f'{slug}: missing a working scene-specific product entry')
+    for slug in SHORT_SCENES:
+        path = os.path.join(DIST, slug, 'index.html')
+        with open(path, encoding='utf-8') as f:
+            page = f.read()
+        guide = re.search(rf'<section class="landing scene-guide" data-scene-guide="{re.escape(slug)}">(.*?)</section>', page, flags=re.S)
+        if not guide:
+            errors.append(f'{slug}: missing unique short-video workflow')
+            continue
+        visible = re.sub(r'<[^>]+>', ' ', guide.group(1))
+        if len(visible.split()) < 180:
+            errors.append(f'{slug}: short-video workflow is too thin')
+        if guide.group(1).count('<details>') < 3:
+            errors.append(f'{slug}: needs at least three visible FAQs')
+        if 'script-templates/?scene=' not in guide.group(1) or 'video-converter/?preset=' not in guide.group(1):
+            errors.append(f'{slug}: missing scene-specific script or export entry')
     if errors:
         sys.exit('SEO build validation failed:\n' + '\n'.join(errors))
 
@@ -195,13 +274,21 @@ def build_localized_page_copies(catalog):
                 continue
             with open(source, encoding='utf-8') as f:
                 page = f.read()
+            # Detailed short-video workflows launch in English first. Keep the
+            # already translated guide for other locales until its editorial
+            # section has passed the locale quality gate.
+            if locale not in ('en', 'zh-CN', 'zh-TW', 'ja', 'ko', 'es', 'pt', 'fr', 'de', 'ru', 'ar', 'hi', 'id', 'vi', 'th') and slug in SHORT_SCENES:
+                page = re.sub(r'<section class="landing scene-guide" data-scene-guide="[^"]+">.*?</section>', '', page, count=1, flags=re.S)
             title, description = pages[slug]
             url = absolute_url(SITE, locale, slug)
             page = re.sub(r'<html\b[^>]*>', f'<html lang="{locale}" dir="{meta[2]}">', page, count=1)
-            page = re.sub(r'<title>.*?</title>', f'<title>{html.escape(title)} | CuePrompt</title>', page, count=1, flags=re.S)
-            page = re.sub(r'<meta name="description" content="[^"]*">', f'<meta name="description" content="{html.escape(description)}">', page, count=1)
-            page = re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{html.escape(title)} | CuePrompt">', page, count=1)
-            page = re.sub(r'<meta property="og:description" content="[^"]*">', f'<meta property="og:description" content="{html.escape(description)}">', page, count=1)
+            # Landing routes reuse the Studio template, whose SEO tags carry
+            # data-i18n attributes. Replace the complete tags so those runtime
+            # hooks cannot restore the homepage metadata after page load.
+            page = re.sub(r'<title\b[^>]*>.*?</title>', f'<title>{html.escape(title)} | CuePrompt</title>', page, count=1, flags=re.S)
+            page = re.sub(r'<meta\b[^>]*\bname="description"[^>]*>', f'<meta name="description" content="{html.escape(description, quote=True)}">', page, count=1)
+            page = re.sub(r'<meta\b[^>]*\bproperty="og:title"[^>]*>', f'<meta property="og:title" content="{html.escape(title, quote=True)} | CuePrompt">', page, count=1)
+            page = re.sub(r'<meta\b[^>]*\bproperty="og:description"[^>]*>', f'<meta property="og:description" content="{html.escape(description, quote=True)}">', page, count=1)
             page = normalize_page_urls(page, url)
             # Localized copies are rebuilt from files in dist. Remove every
             # previous alternate/locale tag first; otherwise a second build
@@ -229,6 +316,33 @@ def localize_public_content(page, locale, slug):
         head, separator, body = page.partition('</head>')
         page = head + separator + localize_korean_tool(body, slug)
     page = localize_remaining_public_copy(page, locale)
+    page = localize_scene_guide(page, locale, slug)
+    page = localize_short_scene(page, locale, slug)
+    page = localize_short_scene_ja(page, locale, slug)
+    page = localize_short_scene_ko(page, locale, slug)
+    page = localize_short_scene_es(page, locale, slug)
+    page = localize_short_scene_pt(page, locale, slug)
+    page = localize_short_scene_fr(page, locale, slug)
+    page = localize_short_scene_de(page, locale, slug)
+    page = localize_short_scene_ru(page, locale, slug)
+    page = localize_short_scene_ar(page, locale, slug)
+    page = localize_short_scene_hi(page, locale, slug)
+    page = localize_short_scene_id(page, locale, slug)
+    page = localize_short_scene_vi(page, locale, slug)
+    page = localize_short_scene_th(page, locale, slug)
+    page = localize_core_scene(page, locale, slug)
+    page = localize_core_scene_ja(page, locale, slug)
+    page = localize_core_scene_ko(page, locale, slug)
+    page = localize_core_scene_es(page, locale, slug)
+    page = localize_core_scene_pt(page, locale, slug)
+    page = localize_core_scene_fr(page, locale, slug)
+    page = localize_core_scene_de(page, locale, slug)
+    page = localize_core_scene_ru(page, locale, slug)
+    page = localize_core_scene_ar(page, locale, slug)
+    page = localize_core_scene_hi(page, locale, slug)
+    page = localize_core_scene_id(page, locale, slug)
+    page = localize_core_scene_vi(page, locale, slug)
+    page = localize_core_scene_th(page, locale, slug)
     chrome = {
         'es': ('Abrir Studio ↗', 'Revisa el borrador y elige el siguiente paso.'),
         'pt': ('Abrir Studio ↗', 'Revise o rascunho e escolha o próximo passo.'),
@@ -473,6 +587,86 @@ def expand_page_catalog(catalog):
     # platform name must intentionally remain in English.
     for locale, (prefix, description) in labels.items():
         catalog[locale] = {slug: [titles[locale][index], description] for index, slug in enumerate(PUBLIC_PAGE_SLUGS)}
+    # Search snippets for completed scene-guide locales must describe the
+    # actual platform workflow instead of repeating a generic product line.
+    for locale in ('es', 'pt', 'fr', 'de', 'ja', 'ko', 'ru', 'ar', 'hi', 'id', 'vi', 'th', 'zh-CN', 'zh-TW'):
+        for slug, description in scene_guide_descriptions(locale).items():
+            catalog[locale][slug][1] = description
+    core_descriptions = {
+        'zh-CN': {
+            'teleprompter-with-camera': '在同一个浏览器中边读稿边录制视频，摄像头预览、提词和录制集中完成，文件保留在本地。',
+            'teleprompter-for-youtube': '为 YouTube 长视频创建分章节脚本、保持自然视线，并使用 16:9 预设完成录制和发布准备。',
+            'teleprompter-for-presentations': '使用全屏提词、停顿标记和灵活滚动排练演讲与演示，在现场保持节奏和自然表达。',
+        },
+        'zh-TW': {
+            'teleprompter-with-camera': '在同一個瀏覽器中一邊讀講稿一邊錄製影片，整合攝影機預覽、提詞與錄製，檔案保留在本機。',
+            'teleprompter-for-youtube': '為 YouTube 長影片建立分章講稿、保持自然視線，並使用 16:9 預設完成錄製與發布準備。',
+            'teleprompter-for-presentations': '使用全螢幕提詞、停頓標記和彈性捲動排練演講與簡報，在現場維持節奏與自然表達。',
+        },
+        'ja': {
+            'teleprompter-with-camera': '1つのブラウザーで原稿を読みながら動画を収録。カメラプレビュー、テレプロンプター、録画をまとめ、ファイルは端末に保存します。',
+            'teleprompter-for-youtube': 'YouTube長尺動画の原稿をチャプターで整理し、自然な目線を保ちながら収録して、16:9の書き出しと公開準備まで進めます。',
+            'teleprompter-for-presentations': '全画面表示、間のマーカー、柔軟なスクロールでスピーチやプレゼンを練習し、本番でも自然なテンポを保てます。',
+        },
+        'ko': {
+            'teleprompter-with-camera': '하나의 브라우저에서 대본을 읽으며 영상을 녹화하세요. 카메라 미리보기, 텔레프롬프터, 녹화를 한곳에서 사용하고 파일은 기기에 보관합니다.',
+            'teleprompter-for-youtube': 'YouTube 장편 영상 대본을 챕터로 구성하고 자연스러운 시선을 유지하며 녹화한 뒤 16:9 내보내기와 게시 준비까지 진행하세요.',
+            'teleprompter-for-presentations': '전체 화면, 멈춤 표시, 유연한 스크롤로 연설과 프레젠테이션을 연습하고 실제 발표에서도 자연스러운 속도를 유지하세요.',
+        },
+        'es': {
+            'teleprompter-with-camera': 'Lee el guion mientras grabas vídeo en el mismo navegador. Reúne la vista previa, el teleprónter y la grabación, y conserva el archivo en tu dispositivo.',
+            'teleprompter-for-youtube': 'Organiza guiones para vídeos largos de YouTube por capítulos, mantén una mirada natural y prepara la grabación, la exportación 16:9 y la publicación.',
+            'teleprompter-for-presentations': 'Ensaya discursos y presentaciones con pantalla completa, marcas de pausa y desplazamiento flexible para mantener un ritmo natural durante el evento.',
+        },
+        'pt': {
+            'teleprompter-with-camera': 'Leia o roteiro enquanto grava vídeo no mesmo navegador. Reúna prévia da câmera, teleprompter e gravação, mantendo o arquivo no dispositivo.',
+            'teleprompter-for-youtube': 'Organize roteiros de vídeos longos do YouTube em capítulos, mantenha o olhar natural e prepare gravação, exportação 16:9 e publicação.',
+            'teleprompter-for-presentations': 'Ensaie discursos e apresentações com tela cheia, marcas de pausa e rolagem flexível para manter um ritmo natural no evento.',
+        },
+        'fr': {
+            'teleprompter-with-camera': 'Lisez votre script tout en enregistrant dans le même navigateur. Réunissez aperçu caméra, téléprompteur et enregistrement, avec un fichier conservé sur votre appareil.',
+            'teleprompter-for-youtube': 'Structurez les scripts YouTube longs en chapitres, gardez un regard naturel et préparez l’enregistrement, l’export 16:9 et la publication.',
+            'teleprompter-for-presentations': 'Répétez discours et présentations en plein écran avec des repères de pause et un défilement souple pour conserver un rythme naturel.',
+        },
+        'de': {
+            'teleprompter-with-camera': 'Lies dein Skript und nimm im selben Browser auf. Kameravorschau, Teleprompter und Aufnahme bleiben zusammen, die Datei bleibt auf deinem Gerät.',
+            'teleprompter-for-youtube': 'Gliedere lange YouTube-Skripte in Kapitel, halte natürlichen Blickkontakt und bereite Aufnahme, 16:9-Export und Veröffentlichung vor.',
+            'teleprompter-for-presentations': 'Probe Reden und Präsentationen im Vollbild mit Pausenmarkierungen und flexiblem Scrollen, um beim Auftritt ein natürliches Tempo zu halten.',
+        },
+        'ru': {
+            'teleprompter-with-camera': 'Читайте сценарий и записывайте видео в одном браузере. Предпросмотр камеры, телесуфлёр и запись работают вместе, а файл остаётся на устройстве.',
+            'teleprompter-for-youtube': 'Разделите длинный сценарий YouTube на главы, сохраняйте естественный взгляд и подготовьте запись, экспорт 16:9 и публикацию.',
+            'teleprompter-for-presentations': 'Репетируйте речи и презентации в полноэкранном режиме с отметками пауз и гибкой прокруткой, сохраняя естественный темп.',
+        },
+        'ar': {
+            'teleprompter-with-camera': 'اقرأ النص وسجّل الفيديو في المتصفح نفسه. اجمع معاينة الكاميرا والملقّن والتسجيل مع بقاء الملف على جهازك.',
+            'teleprompter-for-youtube': 'نظّم نصوص فيديوهات YouTube الطويلة في فصول، وحافظ على نظرة طبيعية، وجهّز التسجيل والتصدير بنسبة 16:9 والنشر.',
+            'teleprompter-for-presentations': 'تدرّب على الخطابات والعروض بملء الشاشة مع علامات الوقف والتمرير المرن للحفاظ على إيقاع طبيعي أثناء الحدث.',
+        },
+        'hi': {
+            'teleprompter-with-camera': 'एक ही ब्राउज़र में स्क्रिप्ट पढ़ते हुए वीडियो रिकॉर्ड करें। कैमरा प्रीव्यू, टेलीप्रॉम्प्टर और रिकॉर्डिंग साथ रखें और फ़ाइल अपने डिवाइस पर बचाएँ।',
+            'teleprompter-for-youtube': 'लंबे YouTube वीडियो की स्क्रिप्ट को चैप्टर में बाँटें, स्वाभाविक नज़र बनाए रखें और रिकॉर्डिंग, 16:9 एक्सपोर्ट तथा प्रकाशन तैयार करें।',
+            'teleprompter-for-presentations': 'फ़ुल स्क्रीन, विराम चिह्न और लचीली स्क्रॉलिंग के साथ स्पीच व प्रस्तुतियों का अभ्यास करें और कार्यक्रम में स्वाभाविक गति बनाए रखें।',
+        },
+        'id': {
+            'teleprompter-with-camera': 'Baca naskah sambil merekam video di browser yang sama. Satukan pratinjau kamera, teleprompter, dan perekaman, sementara file tetap di perangkat.',
+            'teleprompter-for-youtube': 'Susun naskah video YouTube panjang menjadi bab, pertahankan tatapan alami, lalu siapkan rekaman, ekspor 16:9, dan publikasi.',
+            'teleprompter-for-presentations': 'Latih pidato dan presentasi dalam layar penuh dengan penanda jeda serta gulir fleksibel agar ritme tetap alami saat acara.',
+        },
+        'vi': {
+            'teleprompter-with-camera': 'Đọc kịch bản trong khi quay video trên cùng một trình duyệt. Kết hợp xem trước camera, teleprompter và ghi hình, còn tệp được giữ trên thiết bị.',
+            'teleprompter-for-youtube': 'Chia kịch bản YouTube dài thành các chương, giữ ánh mắt tự nhiên và chuẩn bị ghi hình, xuất 16:9 cùng nội dung đăng tải.',
+            'teleprompter-for-presentations': 'Luyện bài nói và thuyết trình toàn màn hình với dấu tạm dừng cùng cuộn linh hoạt để duy trì nhịp tự nhiên tại sự kiện.',
+        },
+        'th': {
+            'teleprompter-with-camera': 'อ่านสคริปต์พร้อมบันทึกวิดีโอในเบราว์เซอร์เดียว รวมภาพตัวอย่างจากกล้อง เทเลพรอมพ์เตอร์ และการบันทึก โดยไฟล์ยังอยู่บนอุปกรณ์ของคุณ',
+            'teleprompter-for-youtube': 'แบ่งสคริปต์ YouTube แบบยาวเป็นบท รักษาสายตาให้เป็นธรรมชาติ และเตรียมการบันทึก การส่งออก 16:9 และเนื้อหาสำหรับเผยแพร่',
+            'teleprompter-for-presentations': 'ซ้อมสุนทรพจน์และงานนำเสนอแบบเต็มหน้าจอ พร้อมเครื่องหมายหยุดและการเลื่อนที่ยืดหยุ่น เพื่อรักษาจังหวะที่เป็นธรรมชาติบนเวที',
+        },
+    }
+    for locale, pages in core_descriptions.items():
+        for slug, description in pages.items():
+            catalog[locale][slug][1] = description
     return catalog
 
 
@@ -517,9 +711,13 @@ def main():
     # dist/<slug>/index.html back onto itself, so without re-baking here template
     # changes (logo, favicon, asset hashes) would never reach those routes.
     for slug in LANDING:
-        write(os.path.join(DIST, slug, 'index.html'), bake(template, 'en', en, en))
+        page = bake(template, 'en', en, en)
+        page = page.replace('<section class="studio"', render_core_scene(slug) + '<section class="studio"', 1)
+        write(os.path.join(DIST, slug, 'index.html'), page)
     for slug, (title, description, headline) in SCENE_GUIDES.items():
-        write(os.path.join(DIST, slug, 'index.html'), guide_page(slug, title, description, headline))
+        page = guide_page(slug, title, description, headline)
+        page = page.replace('</main>', render_short_scene(slug) + '</main>', 1)
+        write(os.path.join(DIST, slug, 'index.html'), page)
     privacy_body = '''<p>CuePrompt is designed to work in your browser without an account. This policy explains what stays on your device, what you choose to send to third parties, and how to contact us.</p><h2>Scripts, settings and recordings</h2><p>Your scripts, preferences and script library are stored in your browser. Camera recordings are created on your device and are not uploaded to a CuePrompt server. You can delete local data in your browser or export and delete your library from CuePrompt. Clearing browser data may remove locally stored scripts and settings.</p><h2>Smart Follow and microphone audio</h2><p>When you turn on Smart Follow, your browser sends microphone audio to its speech-recognition service to produce a transcript. Depending on your browser, this may be provided by Google, Microsoft or Apple. CuePrompt uses the recognition result to align the prompt locally; it does not receive your audio or transcript on its own server. Smart Follow needs a network connection to the browser service and may not be available in every browser or region.</p><h2>Camera and microphone permissions</h2><p>CuePrompt requests camera or microphone access only after you choose a feature that needs it. You can revoke those permissions in your browser or device settings. Your recording stays on your device unless you download, share or upload it yourself.</p><h2>Bring-your-own AI and transcription services</h2><p>If you choose to use the AI writer or configure a transcription service, the text, recording and API key required for that request are sent directly from your browser to the provider you select. CuePrompt does not supply, receive or store those API keys. Review the selected provider’s privacy terms and use a key with an appropriate spending limit.</p><h2>Website delivery and communications</h2><p>Like most websites, the hosting and email providers that deliver CuePrompt may process standard technical information needed to serve a request or deliver a message. If you email us, we use your message and contact details to respond and provide support.</p><h2>Your choices and contact</h2><p>Because CuePrompt does not provide accounts or cloud script storage, most data controls are in your browser. For privacy questions or support, contact <a href="mailto:support@cueprompt.io">support@cueprompt.io</a>.</p><h2>Changes</h2><p>We may update this policy as CuePrompt changes. The date above shows when it was last revised.</p>'''
     terms_body = '''<p>These terms govern your use of CuePrompt and its browser-based tools. By using CuePrompt, you agree to use it responsibly and in accordance with applicable law.</p><h2>The service</h2><p>CuePrompt provides browser-based prompting, script and creator tools. Features may change, be unavailable in some browsers or regions, or depend on services run by your browser, device or a provider you select.</p><h2>Your content and responsibilities</h2><p>You retain responsibility for your scripts, recordings, uploads and any material you process. Do not use CuePrompt to process content you do not have the right to use, or for unlawful, harmful or infringing activity. Keep your own backup of important material; clearing browser data can remove locally stored content.</p><h2>Third-party services</h2><p>Smart Follow relies on your browser’s speech-recognition service. Optional AI writing and transcription requests are sent directly to the provider you configure. Those services have their own terms, privacy practices, availability and charges; you are responsible for reviewing them and for any charges you incur.</p><h2>Availability and disclaimers</h2><p>CuePrompt is provided as available. We work to keep it useful and reliable, but do not guarantee uninterrupted operation, compatibility with every device or browser, or that a feature will meet a particular purpose. Test recording and export workflows before relying on them for an important event.</p><h2>Changes and contact</h2><p>We may modify or discontinue features or these terms. Continued use after an update means you accept the updated terms. For questions, contact <a href="mailto:support@cueprompt.io">support@cueprompt.io</a>.</p>'''
     write(os.path.join(DIST, 'privacy', 'index.html'), legal_page('privacy', 'Privacy Policy', 'How CuePrompt handles scripts, recordings, microphone audio and optional third-party AI services.', privacy_body))
