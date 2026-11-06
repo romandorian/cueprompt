@@ -137,9 +137,15 @@ test('new blank script action is visible and keeps prior drafts in the library',
 
 test('editor creation actions are consolidated into a localized tools disclosure', () => {
   assert.match(app, /editorTools\.className = 'editor-tools-menu'/);
+  assert.match(app, /editorTools\.open = true/);
   assert.match(app, /editorToolsPanel\.append\(\.\.\.editorToolButtons\)/);
   assert.match(app, /editorToolsSummary\.textContent = editorToolButtons\.map/);
   assert.match(css, /\.editor-tools-panel\{display:grid;grid-template-columns:repeat\(3,1fr\)/);
+});
+
+test('writing tools and primary scrolling settings start expanded', () => {
+  assert.match(app, /editorTools\.open = true/);
+  assert.match(app, /quickSettings\.open = true/);
 });
 
 test('homepage reserves the quick composer slot before JavaScript boots', () => {

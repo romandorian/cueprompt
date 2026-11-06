@@ -60,6 +60,7 @@ exportScriptButton.classList.add('editor-export-button');
 $('ai-button').after(exportScriptButton);
 const editorTools = document.createElement('details');
 editorTools.className = 'editor-tools-menu';
+editorTools.open = true;
 const editorToolsSummary = document.createElement('summary');
 const editorToolsPanel = document.createElement('div');
 editorToolsPanel.className = 'editor-tools-panel';
@@ -118,6 +119,7 @@ editorExpandDialog.querySelector('.editor-expand-done').onclick = closeExpandedE
 editorExpandDialog.addEventListener('cancel', e => { e.preventDefault(); closeExpandedEditor(); });
 const quickSettings = document.createElement('details');
 quickSettings.className = 'reading-options quick-settings';
+quickSettings.open = true;
 const quickSettingsSummary = document.createElement('summary');
 const quickSettingsLabels = ['settings.speed', 'settings.size', 'settings.mirror'].map(key => document.querySelector(`[data-i18n="${key}"]`)?.textContent).filter(Boolean);
 quickSettingsSummary.textContent = quickSettingsLabels.join(' · ');
