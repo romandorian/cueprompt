@@ -111,6 +111,55 @@ def bake(template, code, d, en):
     out = re.sub(r'<[a-zA-Z][^>]*\sdata-i18n-(?:ph|aria|title|content)="[^"]*"[^>]*>', fix_tag, template)
     out = re.sub(r'(<(\w+)\b[^>]*\sdata-i18n="([^"]+)"[^>]*>)(.*?)(</\2>)',
                  lambda m: m.group(1) + html.escape(t(m.group(3)), quote=False) + m.group(5), out, flags=re.S)
+    use_case_chrome = {
+        'en': ('USE CASES', 'Choose your workflow', 'Start with the page built for your recording format.', 'Camera', 'Presentations'),
+        'zh-CN': ('使用场景', '选择你的工作流', '从与你的录制形式对应的页面开始。', '摄像头录制', '演讲与简报'),
+        'zh-TW': ('使用情境', '選擇你的工作流程', '從符合錄製形式的頁面開始。', '攝影機錄製', '簡報與演講'),
+        'ja': ('用途別ガイド', '制作フローを選ぶ', '録画形式に合ったページから始めましょう。', 'カメラ録画', 'プレゼンテーション'),
+        'ko': ('사용 사례', '제작 흐름을 선택하세요', '녹화 형식에 맞는 페이지에서 시작하세요.', '카메라 녹화', '프레젠테이션'),
+        'es': ('CASOS DE USO', 'Elige tu flujo de trabajo', 'Empieza por la página creada para tu formato de grabación.', 'Cámara', 'Presentaciones'),
+        'pt': ('CASOS DE USO', 'Escolha seu fluxo de trabalho', 'Comece pela página criada para seu formato de gravação.', 'Câmera', 'Apresentações'),
+        'fr': ('CAS D’USAGE', 'Choisissez votre flux de création', 'Commencez par la page adaptée à votre format d’enregistrement.', 'Caméra', 'Présentations'),
+        'de': ('ANWENDUNGSFÄLLE', 'Wähle deinen Workflow', 'Beginne mit der Seite für dein Aufnahmeformat.', 'Kamera', 'Präsentationen'),
+        'ru': ('СЦЕНАРИИ', 'Выберите рабочий процесс', 'Начните со страницы для вашего формата записи.', 'Камера', 'Презентации'),
+        'ar': ('حالات الاستخدام', 'اختر مسار عملك', 'ابدأ بالصفحة المناسبة لتنسيق تسجيلك.', 'الكاميرا', 'العروض التقديمية'),
+        'hi': ('उपयोग के तरीके', 'अपना वर्कफ़्लो चुनें', 'अपने रिकॉर्डिंग फ़ॉर्मेट के लिए बने पेज से शुरू करें।', 'कैमरा', 'प्रस्तुतियाँ'),
+        'id': ('SKENARIO PENGGUNAAN', 'Pilih alur kerja Anda', 'Mulai dari halaman yang sesuai dengan format rekaman Anda.', 'Kamera', 'Presentasi'),
+        'vi': ('TÌNH HUỐNG SỬ DỤNG', 'Chọn quy trình của bạn', 'Bắt đầu từ trang phù hợp với định dạng ghi hình.', 'Camera', 'Thuyết trình'),
+        'th': ('กรณีการใช้งาน', 'เลือกเวิร์กโฟลว์ของคุณ', 'เริ่มจากหน้าที่ตรงกับรูปแบบการบันทึกของคุณ', 'กล้อง', 'งานนำเสนอ'),
+    }
+    labels = use_case_chrome.get(code, use_case_chrome['en'])
+    slugs = (('teleprompter-with-camera', labels[3]), ('teleprompter-for-youtube', 'YouTube'),
+             ('teleprompter-for-presentations', labels[4]), ('teleprompter-for-youtube-shorts', 'YouTube Shorts'),
+             ('teleprompter-for-tiktok', 'TikTok'), ('teleprompter-for-instagram-reels', 'Instagram Reels'))
+    nav_chrome = {
+        'en': ('Script templates', 'Tools', 'Script extractor', 'Publishing assistant', 'Video converter'),
+        'zh-CN': ('脚本模板', '工具', '脚本提取', '发布助手', '视频转换'), 'zh-TW': ('講稿範本', '工具', '講稿擷取', '發布助手', '影片轉換'),
+        'ja': ('台本テンプレート', 'ツール', '台本抽出', '公開アシスタント', '動画変換'), 'ko': ('대본 템플릿', '도구', '대본 추출', '게시 도우미', '영상 변환'),
+        'es': ('Plantillas de guion', 'Herramientas', 'Extractor de guion', 'Asistente de publicación', 'Conversor de vídeo'),
+        'pt': ('Modelos de roteiro', 'Ferramentas', 'Extrator de roteiro', 'Assistente de publicação', 'Conversor de vídeo'),
+        'fr': ('Modèles de script', 'Outils', 'Extracteur de script', 'Assistant de publication', 'Convertisseur vidéo'),
+        'de': ('Skriptvorlagen', 'Werkzeuge', 'Skript-Extraktor', 'Veröffentlichungsassistent', 'Videokonverter'),
+        'ru': ('Шаблоны сценариев', 'Инструменты', 'Извлечение сценария', 'Помощник публикации', 'Конвертер видео'),
+        'ar': ('قوالب النصوص', 'الأدوات', 'استخراج النص', 'مساعد النشر', 'تحويل الفيديو'),
+        'hi': ('स्क्रिप्ट टेम्पलेट', 'टूल', 'स्क्रिप्ट एक्सट्रैक्टर', 'प्रकाशन सहायक', 'वीडियो कन्वर्टर'),
+        'id': ('Templat naskah', 'Alat', 'Ekstraktor naskah', 'Asisten publikasi', 'Konverter video'),
+        'vi': ('Mẫu kịch bản', 'Công cụ', 'Trích xuất kịch bản', 'Trợ lý xuất bản', 'Chuyển đổi video'),
+        'th': ('เทมเพลตสคริปต์', 'เครื่องมือ', 'ตัวแยกสคริปต์', 'ผู้ช่วยเผยแพร่', 'ตัวแปลงวิดีโอ'),
+    }
+    nav_labels = nav_chrome.get(code, nav_chrome['en'])
+    case_links = ''.join(f'<a href="{page_path(code, slug)}">{html.escape(label)}</a>' for slug, label in slugs)
+    tool_links = ''.join((f'<a href="{page_path(code, "script-extractor")}">{html.escape(nav_labels[2])}</a>',
+                          f'<a href="{page_path(code, "publishing-assistant")}">{html.escape(nav_labels[3])}</a>',
+                          f'<a href="{page_path(code, "video-converter")}">{html.escape(nav_labels[4])}</a>'))
+    studio_label = html.escape(t('tab.prompt'))
+    camera_label = html.escape(t('tab.camera'))
+    site_nav = (f'<nav class="site-nav" aria-label="Primary"><a class="selected" href="{page_path(code)}#studio">{studio_label}</a>'
+                f'<a href="{page_path(code, "teleprompter-with-camera")}">{camera_label}</a>'
+                f'<a href="{page_path(code, "script-templates")}">{html.escape(nav_labels[0])}</a>'
+                f'<details class="nav-menu"><summary>{html.escape(labels[0])}</summary><div>{case_links}</div></details>'
+                f'<details class="nav-menu"><summary>{html.escape(nav_labels[1])}</summary><div>{tool_links}</div></details></nav>')
+    out = re.sub(r'<nav>.*?</nav>', site_nav, out, count=1, flags=re.S)
     compatibility = (
         '<section class="compat-banner" aria-labelledby="compat-title">'
         '<span class="compat-mark" aria-hidden="true">✓</span><div>'

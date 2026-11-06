@@ -1059,37 +1059,9 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
       if (incoming.read) setTimeout(() => startPerformance(), 80);
     }
   } catch { /* Existing scripts remain available if handoff storage is unavailable. */ }
-  const creatorCopy = document.documentElement.lang === 'zh-CN' ? {
-    eyebrow: '继续创作', title: '接下来想做什么？', intro: '从写稿、整理到发布和视频处理，选择下一步即可。',
-    templates: ['口播脚本模板', '按场景生成一份可以直接修改和排练的脚本。', '开始写稿'],
-    cleaner: ['转录稿清理', '把转录或原始文字整理成更自然的口播稿。', '整理文字'],
-    publish: ['发布文案助手', '用当前稿件生成标题、简介、标签和发布清单。', '准备发布'],
-    video: ['视频压缩转换', '在本设备压缩录制视频，或转换视频格式。', '处理视频']
-  } : document.documentElement.lang === 'zh-TW' ? {
-    eyebrow: '繼續創作', title: '接下來想做什麼？', intro: '從寫稿、整理到發佈和影片處理，選擇下一步即可。',
-    templates: ['口播腳本範本', '按情境建立一份可以直接修改和排練的腳本。', '開始寫稿'],
-    cleaner: ['轉錄稿整理', '把轉錄或原始文字整理成更自然的口播稿。', '整理文字'],
-    publish: ['發佈文案助手', '用目前稿件建立標題、簡介、標籤和發佈清單。', '準備發佈'],
-    video: ['影片壓縮轉換', '在本裝置壓縮錄製影片，或轉換影片格式。', '處理影片']
-  } : {
-    eyebrow: 'KEEP CREATING', title: 'What would you like to do next?', intro: 'Move from writing and cleanup to publishing or video delivery.',
-    templates: ['Script builder', 'Build a structured speaking script from a ready-made format.', 'Start a script'],
-    cleaner: ['Transcript cleaner', 'Turn a transcript or rough source text into a clean speaking draft.', 'Clean up text'],
-    publish: ['Publishing assistant', 'Create a title, description, tags and checklist from this script.', 'Prepare publishing copy'],
-    video: ['Video compressor', 'Compress a recording or convert its format on this device.', 'Process a video']
-  };
-  const creatorLinks = document.createElement('section');
-  creatorLinks.className = 'creator-links';
-  creatorLinks.innerHTML = `<div class="creator-links-head"><span>${creatorCopy.eyebrow}</span><strong>${creatorCopy.title}</strong><p>${creatorCopy.intro}</p></div><div class="creator-tools"><a class="creator-tool" href="/script-templates/"><strong>${creatorCopy.templates[0]}</strong><span>${creatorCopy.templates[1]}</span><b>${creatorCopy.templates[2]} →</b></a><a class="creator-tool" href="/script-extractor/"><strong>${creatorCopy.cleaner[0]}</strong><span>${creatorCopy.cleaner[1]}</span><b>${creatorCopy.cleaner[2]} →</b></a><button class="creator-tool" id="prepare-publishing" type="button"><strong>${creatorCopy.publish[0]}</strong><span>${creatorCopy.publish[1]}</span><b>${creatorCopy.publish[2]} →</b></button><a class="creator-tool" href="/video-converter/"><strong>${creatorCopy.video[0]}</strong><span>${creatorCopy.video[1]}</span><b>${creatorCopy.video[2]} →</b></a></div>`;
-  document.querySelector('.template-box').after(creatorLinks);
   document.querySelectorAll('[data-open-camera]').forEach(link => link.addEventListener('click', () => {
     setTimeout(() => $('camera-tab').click(), 80);
   }));
-  const publishButton = $('prepare-publishing');
-  publishButton.onclick = async () => {
-    try { await CueWorkflow.save('publish', {title:$('script-title').value, text:$('script').value}); location.href = '/publishing-assistant/'; }
-    catch { toast('Could not transfer the draft. Download or copy your script first.'); }
-  };
   const processButton = document.createElement('button'); processButton.className = 'ghost-button'; processButton.textContent = 'Compress / convert →';
   processButton.onclick = async () => {
     if (!take) return;
