@@ -23,9 +23,42 @@
         link.href = home + match[1] + '/' + (match[2] || '');
       }
     });
+    const siteNav = document.querySelector('.site-nav');
+    if (siteNav) {
+      const currentPath = location.pathname.replace(/\/+$/, '') || '/';
+      siteNav.querySelectorAll('a').forEach(link => {
+        link.classList.remove('selected');
+        link.removeAttribute('aria-current');
+        const linkPath = new URL(link.href, location.origin).pathname.replace(/\/+$/, '') || '/';
+        if (linkPath === currentPath) {
+          link.classList.add('selected');
+          link.setAttribute('aria-current', 'page');
+          const menu = link.closest('.nav-menu');
+          if (menu) menu.querySelector('summary').classList.add('is-current');
+        }
+      });
+      const menus = [...siteNav.querySelectorAll('.nav-menu')];
+      menus.forEach(menu => menu.addEventListener('toggle', () => {
+        if (menu.open) menus.forEach(other => { if (other !== menu) other.open = false; });
+      }));
+      document.addEventListener('click', event => {
+        if (!siteNav.contains(event.target)) menus.forEach(menu => { menu.open = false; });
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+          const openMenu = menus.find(menu => menu.open);
+          if (openMenu) {
+            openMenu.open = false;
+            openMenu.querySelector('summary').focus();
+          }
+        }
+      });
+    }
     const header = document.querySelector('header');
     const currentSlug = slug;
-    if (header && currentSlug && !header.querySelector('[data-locale-picker]')) {
+    // Most public pages already include the global language selector. Only add
+    // this fallback on a standalone page that does not have one.
+    if (header && currentSlug && !header.querySelector('#ui-language') && !header.querySelector('[data-locale-picker]')) {
       const picker = document.createElement('select');
       picker.dataset.localePicker = 'true';
       picker.className = 'locale-page-picker';

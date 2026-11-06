@@ -6,7 +6,7 @@ Source of truth:  src/index.html (English template with data-i18n keys) and src/
 Outputs (dist/):  index.html, <lang>/index.html, i18n.js, i18n/<code>.js, sitemap.xml, hreflang tags on landing pages.
 Run from the project root:  python3 tools/build_pages.py
 """
-import hashlib, html, json, os, re, sys, subprocess
+import hashlib, html, json, os, re, sys, shutil, subprocess
 from urllib.parse import urlsplit
 from site_i18n import LOCALES
 from site_i18n import PUBLIC_PAGE_SLUGS, absolute_url, hreflang_links, page_path
@@ -64,6 +64,19 @@ with open(os.path.join(DIST, 'app.js'), 'rb') as f:
 with open(os.path.join(DIST, 'style.css'), 'rb') as f:
     STYLE_VERSION = hashlib.sha256(f.read()).hexdigest()[:12]
 LANGS = list(LOCALES)
+RETIRED_LOCALES = ('ar', 'hi', 'id', 'vi', 'th')
+
+
+def remove_retired_locale_outputs():
+    """Prevent removed languages from lingering in deploy artifacts after a rebuild."""
+    for code in RETIRED_LOCALES:
+        shutil.rmtree(os.path.join(DIST, code), ignore_errors=True)
+        bundle = os.path.join(DIST, 'i18n', code + '.js')
+        if os.path.exists(bundle):
+            os.remove(bundle)
+
+
+remove_retired_locale_outputs()
 LANDING = ['teleprompter-for-youtube', 'teleprompter-for-presentations', 'teleprompter-with-camera']
 SCENE_GUIDES = {
     'teleprompter-for-youtube-shorts': ('Teleprompter for YouTube Shorts', 'Create clear YouTube Shorts with a browser teleprompter, a 9:16 export preset and a local publishing pack.', 'YouTube Shorts, without losing your place.'),
@@ -129,8 +142,8 @@ def bake(template, code, d, en):
         'th': ('กรณีการใช้งาน', 'เลือกเวิร์กโฟลว์ของคุณ', 'เริ่มจากหน้าที่ตรงกับรูปแบบการบันทึกของคุณ', 'กล้อง', 'งานนำเสนอ'),
     }
     labels = use_case_chrome.get(code, use_case_chrome['en'])
-    slugs = (('teleprompter-with-camera', labels[3]), ('teleprompter-for-youtube', 'YouTube'),
-             ('teleprompter-for-presentations', labels[4]), ('teleprompter-for-youtube-shorts', 'YouTube Shorts'),
+    slugs = (('teleprompter-for-youtube', 'YouTube'), ('teleprompter-for-presentations', labels[4]),
+             ('teleprompter-for-youtube-shorts', 'YouTube Shorts'),
              ('teleprompter-for-tiktok', 'TikTok'), ('teleprompter-for-instagram-reels', 'Instagram Reels'))
     nav_chrome = {
         'en': ('Script templates', 'Tools', 'Script extractor', 'Publishing assistant', 'Video converter'),
@@ -315,7 +328,10 @@ def build_localized_page_copies(catalog):
     this prevents silently publishing English content under a foreign-language
     canonical URL.
     """
+    retained = {item[0] for item in LANGS}
     for locale, pages in catalog.items():
+        if locale not in retained:
+            continue
         meta = next(item for item in LANGS if item[0] == locale)
         for slug in PUBLIC_PAGE_SLUGS:
             source = os.path.join(DIST, slug, 'index.html')
@@ -350,6 +366,19 @@ def build_localized_page_copies(catalog):
             page = page.replace('href="/#studio"', f'href="{page_path(locale)}#studio"').replace('href="/"', f'href="{page_path(locale)}"')
             page = re.sub(r'(<h1[^>]*>).*?(</h1>)', r'\1' + html.escape(title) + r'\2', page, count=1, flags=re.S)
             page = localize_public_content(page, locale, slug)
+            # Core landing pages reuse the Studio shell. Some editorial
+            # localizers replace visible English phrases after `bake`, which
+            # can accidentally produce mixed-language navigation. Re-inject
+            # the already validated locale homepage navigation last so paths,
+            # labels and menu structure always stay in sync.
+            if '<nav class="site-nav"' in page:
+                locale_home = os.path.join(DIST, meta[3].strip('/'), 'index.html')
+                with open(locale_home, encoding='utf-8') as f:
+                    home_page = f.read()
+                home_nav = re.search(r'<nav class="site-nav".*?</nav>', home_page, flags=re.S)
+                if not home_nav:
+                    sys.exit(f'Missing localized site navigation for {locale}')
+                page = re.sub(r'<nav class="site-nav".*?</nav>', home_nav.group(0), page, count=1, flags=re.S)
             write(os.path.join(DIST, page_path(locale, slug).strip('/'), 'index.html'), page)
 
 

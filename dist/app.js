@@ -3,6 +3,8 @@
 const $ = id => document.getElementById(id);
 const I18N = window.CueI18n;
 const Align = window.CueAlign;
+const newScriptButton = $('new-script');
+newScriptButton.innerHTML = '<span aria-hidden="true">＋</span><span data-i18n="script.new">New script</span>';
 
 /* ---------- i18n ---------- */
 let lang = 'en', dict = I18N.dicts.en;
@@ -12,10 +14,8 @@ function t(key, vars) {
   return s;
 }
 function readingUi(key) {
-  const zh = lang === 'zh-CN' ? { start: '开始阅读', mode: '阅读模式', ready: '准备就绪', reading: '正在阅读', follow: '语音跟读', paused: '已暂停' } :
-    lang === 'zh-TW' ? { start: '開始閱讀', mode: '閱讀模式', ready: '準備就緒', reading: '正在閱讀', follow: '語音跟讀', paused: '已暫停' } :
-    { start: 'Start reading', mode: 'READING MODE', ready: 'READY', reading: 'READING', follow: 'SMART FOLLOW', paused: 'PAUSED' };
-  return zh[key];
+  const keys = { start: 'play.start', mode: 'tab.prompt', ready: 'state.ready', reading: 'state.playing', follow: 'state.listening', paused: 'state.paused' };
+  return t(keys[key]);
 }
 function detectLanguage() {
   const supported = I18N.languages.map(l => l.code);
@@ -50,14 +50,48 @@ floatingButton.id = 'floating-reader'; floatingButton.className = 'floating-read
 floatingButton.dataset.i18nAria = 'pip.button'; floatingButton.setAttribute('aria-label', 'Floating reader');
 floatingButton.innerHTML = '<span aria-hidden="true">◲</span> <span data-i18n="pip.button">Floating reader</span>';
 readingButton.before(floatingButton);
+const cameraBackButton = document.createElement('button');
+cameraBackButton.id = 'camera-back'; cameraBackButton.className = 'camera-back-button'; cameraBackButton.hidden = true;
+cameraBackButton.innerHTML = '<span aria-hidden="true">←</span> <span data-i18n="tab.prompt">Teleprompter</span>';
+$('record').before(cameraBackButton);
+cameraBackButton.onclick = () => $('prompt-tab').click();
 const exportScriptButton = $('export-script');
 exportScriptButton.classList.add('editor-export-button');
 $('ai-button').after(exportScriptButton);
+const editorTools = document.createElement('details');
+editorTools.className = 'editor-tools-menu';
+const editorToolsSummary = document.createElement('summary');
+const editorToolsPanel = document.createElement('div');
+editorToolsPanel.className = 'editor-tools-panel';
+const editorToolButtons = [$('ai-button'), exportScriptButton, $('import-button')];
+editorToolsSummary.textContent = editorToolButtons.map(button => button.textContent.trim().replace(/^[✧↓↥]\s*/, '')).join(' · ');
+editorToolsSummary.setAttribute('aria-label', editorToolsSummary.textContent);
+$('import-file').before(editorTools);
+editorTools.append(editorToolsSummary, editorToolsPanel);
+editorToolsPanel.append(...editorToolButtons);
 const editorSurface = document.querySelector('.editor-surface');
 const editorBar = editorSurface.querySelector('.editor-bar');
+const staticEditorLabel = editorBar.querySelector('[data-i18n="editor.label"]')?.textContent || 'Script editor';
+const staticCloseLabel = document.querySelector('[data-i18n-aria="common.close"]')?.getAttribute('aria-label') || 'Close';
+const dialogReturnFocus = new WeakMap();
+function openDialog(dialog, preferredFocus) {
+  const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (trigger && !dialog.contains(trigger)) dialogReturnFocus.set(dialog, trigger);
+  dialog.showModal();
+  if (preferredFocus) requestAnimationFrame(() => preferredFocus.focus());
+}
+document.addEventListener('close', event => {
+  const dialog = event.target;
+  if (!(dialog instanceof HTMLDialogElement)) return;
+  const trigger = dialogReturnFocus.get(dialog);
+  dialogReturnFocus.delete(dialog);
+  queueMicrotask(() => {
+    if (trigger?.isConnected && (document.activeElement === document.body || document.activeElement === dialog)) trigger.focus();
+  });
+}, true);
 const editorLocale = document.documentElement.lang === 'zh-CN' ? { expand: '放大编辑', title: '专注编辑稿件', close: '完成' } :
   document.documentElement.lang === 'zh-TW' ? { expand: '放大編輯', title: '專注編輯稿件', close: '完成' } :
-  { expand: 'Expand editor', title: 'Focus editor', close: 'Done' };
+  { expand: staticEditorLabel, title: staticEditorLabel, close: staticCloseLabel };
 const editorExpandButton = document.createElement('button');
 editorExpandButton.type = 'button'; editorExpandButton.className = 'editor-expand-button';
 editorExpandButton.setAttribute('aria-label', editorLocale.expand); editorExpandButton.title = editorLocale.expand;
@@ -70,18 +104,26 @@ document.body.append(editorExpandDialog);
 function openExpandedEditor() {
   if (editorExpandDialog.open) return;
   editorExpandDialog.querySelector('.editor-expand-body').append($('script'));
-  editorExpandDialog.showModal();
-  $('script').focus();
+  openDialog(editorExpandDialog, $('script'));
 }
 function closeExpandedEditor() {
   if (!editorExpandDialog.open) return;
   editorSurface.append($('script'));
   editorExpandDialog.close();
+  editorExpandButton.focus();
 }
 editorExpandButton.onclick = openExpandedEditor;
 $('script').addEventListener('click', openExpandedEditor);
 editorExpandDialog.querySelector('.editor-expand-done').onclick = closeExpandedEditor;
 editorExpandDialog.addEventListener('cancel', e => { e.preventDefault(); closeExpandedEditor(); });
+const quickSettings = document.createElement('details');
+quickSettings.className = 'reading-options quick-settings';
+const quickSettingsSummary = document.createElement('summary');
+const quickSettingsLabels = ['settings.speed', 'settings.size', 'settings.mirror'].map(key => document.querySelector(`[data-i18n="${key}"]`)?.textContent).filter(Boolean);
+quickSettingsSummary.textContent = quickSettingsLabels.join(' · ');
+const primarySettings = document.querySelector('.settings');
+primarySettings.before(quickSettings);
+quickSettings.append(quickSettingsSummary, primarySettings);
 const legacy = store.get('cueprompt-v1', null);
 const settings = Object.assign({ speed: 40, size: 36, mirror: false, mode: 'steady', speechLang: '', uiLang: '', camera: '', mic: '', resolution: 'auto', format: 'auto', countdown: true, mirrorCamera: true },
   legacy && typeof legacy === 'object' ? { speed: legacy.speed || 40, size: legacy.size || 36, mirror: !!legacy.mirror } : {},
@@ -143,7 +185,9 @@ function makeScript(title, text) { const ts = now(); return { id: uid(), title: 
 let library = store.get('cueprompt-library', null);
 function initLibrary() {
   if (!library || !Array.isArray(library.scripts) || !library.scripts.length) {
-    const first = legacy && typeof legacy.text === 'string' ? makeScript(legacy.title || 'My next great video', legacy.text) : makeScript(templateFor('youtube').title, templateFor('youtube').text);
+    const first = legacy && typeof legacy.text === 'string'
+      ? makeScript(legacy.title || t('script.default'), legacy.text)
+      : makeScript(t('script.default'), '');
     library = { version: 1, currentId: first.id, scripts: [first] };
   }
   library.scripts = library.scripts.filter(s => s && typeof s.text === 'string' && s.id);
@@ -182,6 +226,7 @@ function countScript(text) {
 }
 function updateCounts() {
   const c = countScript($('script').value);
+  document.body.classList.toggle('has-script', Boolean($('script').value.trim()));
   $('word-count').textContent = c.cjk && c.words ? t('count.mixed', { c: c.cjk, w: c.words }) : c.cjk ? t('count.chars', { n: c.cjk }) : t('count.words', { n: c.words });
   $('duration').textContent = t('count.duration', { n: Math.max(c.cjk || c.words ? 1 : 0, Math.ceil(c.minutes)) });
 }
@@ -424,18 +469,20 @@ function startFollow() {
   followFatal = false; heardText = '';
   followPos = Math.min(tokenAtGuide(), tokens.length); markRead(true);
   try {
-    recognizer = new SpeechRec();
-    recognizer.lang = speechLang(); recognizer.continuous = true; recognizer.interimResults = true; recognizer.maxAlternatives = 1;
-    recognizer.onresult = onSpeech;
-    recognizer.onerror = onSpeechError;
-    recognizer.onend = () => { if (playing && settings.mode === 'follow' && !followFatal && recognizer) { try { recognizer.start(); } catch { } } };
-    recognizer.start();
+    const currentRecognizer = new SpeechRec();
+    recognizer = currentRecognizer;
+    currentRecognizer.lang = speechLang(); currentRecognizer.continuous = true; currentRecognizer.interimResults = true; currentRecognizer.maxAlternatives = 1;
+    currentRecognizer.onresult = onSpeech;
+    currentRecognizer.onerror = onSpeechError;
+    currentRecognizer.onend = () => { if (playing && settings.mode === 'follow' && !followFatal && recognizer === currentRecognizer) { try { currentRecognizer.start(); } catch { } } };
+    currentRecognizer.start();
   } catch (err) { recognizer = null; setFollowStatus('follow.error', null, true); toast(t('follow.error')); return false; }
   lastHeard = performance.now(); setFollowStatus('follow.status.listening');
   $('follow-indicator').hidden = false;
   return true;
 }
 function stopFollow() {
+  clearTimeout(followEndTimer); followEndTimer = 0;
   if (recognizer) { const r = recognizer; recognizer = null; r.onend = null; try { r.abort(); } catch { } }
   $('follow-indicator').hidden = true;
   if (settings.mode === 'follow' && !followFatal) setFollowStatus('follow.status.idle');
@@ -495,6 +542,7 @@ function fillSpeechLanguages() {
   sel.value = speechLang();
 }
 $('speech-language').onchange = () => { settings.speechLang = $('speech-language').value; saveSettings(); if (playing && settings.mode === 'follow') { pause(); play(); } };
+document.addEventListener('visibilitychange', () => { if (document.hidden && playing && settings.mode === 'follow') pause(); });
 
 /* ---------- editor wiring ---------- */
 let renderQueued = false;
@@ -641,7 +689,7 @@ function deleteScript(s) {
   if (s.id === library.currentId) { library.currentId = library.scripts[0].id; saveLibrary(); openScript(library.currentId); } else saveLibrary();
   renderLibrary();
 }
-$('open-library').onclick = () => { $('library-search').value = ''; renderLibrary(); $('library-dialog').showModal(); };
+$('open-library').onclick = () => { $('library-search').value = ''; renderLibrary(); openDialog($('library-dialog'), $('library-search')); };
 $('close-library').onclick = () => $('library-dialog').close();
 $('library-search').oninput = renderLibrary;
 $('library-new').onclick = () => { addScript(t('script.untitled'), ''); $('library-dialog').close(); $('script').focus(); };
@@ -709,7 +757,13 @@ $('fullscreen').onclick = fullscreen;
 
 /* ---------- camera & recording ---------- */
 let stream = null, recorder = null, chunks = [], recording = false, recStartedAt = 0, countdownActive = null, take = null;
-function setTab(camera) { $('camera-tab').classList.toggle('active', camera); $('prompt-tab').classList.toggle('active', !camera); $('prompter').classList.toggle('camera-on', camera && !!stream); }
+function setTab(camera) {
+  $('camera-tab').classList.toggle('active', camera);
+  $('prompt-tab').classList.toggle('active', !camera);
+  $('prompter').classList.toggle('camera-on', camera && !!stream);
+  document.body.classList.toggle('camera-mode', camera);
+  cameraBackButton.hidden = !camera;
+}
 function videoConstraints() {
   const v = {};
   if (settings.camera) v.deviceId = { exact: settings.camera }; else v.facingMode = 'user';
@@ -719,8 +773,14 @@ function videoConstraints() {
 }
 async function openCamera() {
   if (stream) stream.getTracks().forEach(tr => tr.stop());
-  stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: settings.mic ? { deviceId: { exact: settings.mic } } : true });
-  $('camera').srcObject = stream; $('camera').style.display = 'block';
+  const openedStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: settings.mic ? { deviceId: { exact: settings.mic } } : true });
+  stream = openedStream;
+  openedStream.getVideoTracks().forEach(track => track.addEventListener('ended', () => {
+    if (stream !== openedStream) return;
+    if (recording) stopRecording();
+    closeCamera(); toast(t('toast.camFail'));
+  }, { once: true }));
+  $('camera').srcObject = openedStream; $('camera').style.display = 'block';
   $('camera').classList.toggle('mirrored', settings.mirrorCamera);
   await fillDevices();
 }
@@ -734,11 +794,12 @@ async function fillDevices() {
   }
 }
 $('camera-tab').onclick = async () => {
-  if (stream) { setTab(true); $('camera').style.display = 'block'; $('record').hidden = false; return; }
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast(t('toast.camUnsupported')); return; }
+  if (stream) { setTab(true); $('camera').style.display = 'block'; $('record').hidden = false; document.dispatchEvent(new CustomEvent('cueprompt:camera-state', { detail: 'ready' })); return; }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast(t('toast.camUnsupported')); document.dispatchEvent(new CustomEvent('cueprompt:camera-state', { detail: 'unsupported' })); return; }
   setTab(true); $('camera-notice').hidden = false; $('camera-notice').textContent = t('cam.allow');
   try { await openCamera(); $('record').hidden = false; $('camera-notice').hidden = true; setTab(true); updateRecordUI(); $('recording-options').open = true; toast(t('toast.camReady')); }
   catch (err) { stream = null; setTab(false); $('camera-notice').textContent = t('cam.unavailable'); toast(t('toast.camFail')); }
+  finally { document.dispatchEvent(new CustomEvent('cueprompt:camera-state', { detail: stream ? 'ready' : 'error' })); }
 };
 function closeCamera() { if (stream) { stream.getTracks().forEach(tr => tr.stop()); stream = null; } $('camera').srcObject = null; $('camera').style.display = 'none'; $('record').hidden = true; $('camera-notice').hidden = true; setTab(false); updateRecordUI(); }
 $('prompt-tab').onclick = () => { if (recording || countdownActive) { toast(t('toast.stopFirst')); return; } closeCamera(); };
@@ -762,6 +823,15 @@ function runCountdown(seconds) {
     countdownActive = () => finish(false);
   });
 }
+let wakeLock = null;
+async function keepScreenAwake() {
+  if (!navigator.wakeLock?.request || wakeLock) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }, { once: true }); } catch { wakeLock = null; }
+}
+async function releaseScreenWake() {
+  const lock = wakeLock; wakeLock = null;
+  if (lock) { try { await lock.release(); } catch { } }
+}
 async function startRecording() {
   if (!stream) return;
   if (!$('script').value.trim()) { toast(t('toast.addScript')); $('script').focus(); return; }
@@ -770,16 +840,16 @@ async function startRecording() {
   if (settings.countdown && !(await runCountdown(3))) { $('record').textContent = '● ' + t('record.start'); return; }
   try {
     const type = pickMimeType();
-    recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined); chunks = [];
-    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-    recorder.onstop = () => { const mime = recorder.mimeType || type || 'video/webm'; openReview(new Blob(chunks, { type: mime }), mime, (performance.now() - recStartedAt) / 1000); };
-    recorder.onerror = () => { recording = false; updateRecordUI(); toast(t('toast.recFail')); };
-    recorder.start(1000); recording = true; recStartedAt = performance.now(); updateRecordUI();
+    const activeRecorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined); recorder = activeRecorder; chunks = [];
+    activeRecorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    activeRecorder.onstop = () => { const mime = activeRecorder.mimeType || type || 'video/webm'; const blob = new Blob(chunks, { type: mime }); if (blob.size) openReview(blob, mime, (performance.now() - recStartedAt) / 1000); else toast(t('toast.recFail')); };
+    activeRecorder.onerror = () => { recording = false; releaseScreenWake(); pause(); updateRecordUI(); toast(t('toast.recFail')); };
+    activeRecorder.start(1000); recording = true; recStartedAt = performance.now(); updateRecordUI(); keepScreenAwake();
     play();
   } catch { recording = false; updateRecordUI(); toast(t('toast.recUnavailable')); }
 }
-function stopRecording() { if (recorder && recorder.state !== 'inactive') recorder.stop(); recording = false; updateRecordUI(); pause(); }
-function updateRecordUI() { $('record').textContent = recording ? '■ ' + t('record.stop') : '● ' + t('record.start'); $('rec-dot').hidden = !recording; $('prompter').classList.toggle('is-recording', recording); $('reading-record').hidden = !stream; $('reading-record').textContent = recording ? '■ STOP' : '● REC'; }
+function stopRecording() { if (recorder && recorder.state !== 'inactive') recorder.stop(); recording = false; releaseScreenWake(); updateRecordUI(); pause(); }
+function updateRecordUI() { $('record').textContent = recording ? '■ ' + t('record.stop') : '● ' + t('record.start'); $('rec-dot').hidden = !recording; $('prompter').classList.toggle('is-recording', recording); $('reading-record').hidden = !stream; $('reading-record').textContent = (recording ? '■ ' + t('record.stop') : '● ' + t('record.start')); $('reading-record').setAttribute('aria-label', recording ? t('record.stop') : t('record.start')); }
 $('record').onclick = () => { if (countdownActive) { countdownActive(); return; } if (recording) { stopRecording(); return; } startRecording(); };
 $('reading-record').onclick = () => $('record').click();
 function openReview(blob, mime, seconds) {
@@ -787,7 +857,7 @@ function openReview(blob, mime, seconds) {
   take = { blob, mime, url: URL.createObjectURL(blob), downloaded: false, ext: mime.includes('mp4') ? 'mp4' : 'webm' };
   $('review-video').src = take.url;
   $('review-meta').textContent = formatTime(seconds) + ' · ' + (blob.size / 1048576).toFixed(1) + ' MB · ' + take.ext.toUpperCase();
-  $('review-dialog').showModal();
+  openDialog($('review-dialog'), $('review-download'));
 }
 function closeReview(force) {
   if (take && !take.downloaded && !force && !confirm(t('review.confirmDiscard'))) return false;
@@ -827,7 +897,7 @@ $('ai-target').onchange = () => { $('ai-target').dataset.touched = '1'; };
 function openAi() {
   $('ai-base').value = ai.base; $('ai-model').value = ai.model; $('ai-key').value = ai.key; $('ai-preset').value = presetFor(ai.base);
   $('ai-connection').open = false; $('ai-error').hidden = true;
-  $('ai-dialog').showModal();
+  openDialog($('ai-dialog'), $('ai-topic'));
 }
 function saveAi() { ai.base = $('ai-base').value.trim(); ai.model = $('ai-model').value.trim(); ai.key = $('ai-key').value.trim(); ai.protocol = AI_PRESETS[$('ai-preset').value]?.protocol || 'openai'; store.set('cueprompt-ai', ai); }
 for (const id of ['ai-base', 'ai-model', 'ai-key']) $(id).addEventListener('change', saveAi);
@@ -919,7 +989,7 @@ $('ai-replace').onclick = async () => {
 $('ai-new').onclick = () => { const first = $('ai-result').value.split('\n').find(l => l.trim()) || t('script.untitled'); addScript(first.replace(/^#+\s*/, '').slice(0, 60), $('ai-result').value); $('ai-dialog').close(); };
 
 /* ---------- help & keyboard ---------- */
-$('help').onclick = () => $('help-dialog').showModal(); $('close-help').onclick = () => $('help-dialog').close();
+$('help').onclick = () => openDialog($('help-dialog'), $('close-help')); $('close-help').onclick = () => $('help-dialog').close();
 function feedbackEmailBody() {
   const message = $('feedback-message').value.trim();
   const ja = document.documentElement.lang === 'ja';
@@ -936,7 +1006,7 @@ function feedbackEmailBody() {
   }
   return lines.join('\n');
 }
-$('feedback-button').onclick = () => $('feedback-dialog').showModal();
+$('feedback-button').onclick = () => openDialog($('feedback-dialog'), $('feedback-message'));
 $('close-feedback').onclick = () => $('feedback-dialog').close();
 $('feedback-send').onclick = () => {
   const body = feedbackEmailBody(); if (!body) return;
@@ -956,7 +1026,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'm') setMode(settings.mode === 'follow' ? 'steady' : 'follow');
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); nudgeSpeed(e.key === 'ArrowUp' ? 5 : -5); }
 });
-window.addEventListener('pagehide', () => { closeFloatingReader(); stream?.getTracks().forEach(tr => tr.stop()); stopFollow(); saveLibrary(); });
+window.addEventListener('pagehide', () => { closeFloatingReader(); stream?.getTracks().forEach(tr => tr.stop()); releaseScreenWake(); stopFollow(); saveLibrary(); });
 
 /* ---------- reading view options ---------- */
 const viewDefaults = { textColor: '#e7ecdf', backgroundColor: '#1c241f', readingWidth: '100', lineSpacing: '1.6', mirrorVertical: false, readingGuide: true, highlight: true };
@@ -981,6 +1051,8 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  editorToolsSummary.textContent = editorToolButtons.map(button => button.textContent.trim().replace(/^[✧↓↥]\s*/, '')).join(' · ');
+  editorToolsSummary.setAttribute('aria-label', editorToolsSummary.textContent);
   // SEO metadata belongs to the static locale document. Changing UI copy
   // must not make title/description disagree with its canonical URL.
   $('enter-reading').lastChild.textContent = ' ' + readingUi('start');
@@ -992,6 +1064,14 @@ function applyI18n() {
   if ($('library-dialog').open) renderLibrary();
   $('fullscreen').setAttribute('aria-label', isFullscreen() ? t('fs.exit') : t('fs.toggle'));
   $('reading-float').setAttribute('aria-label', t('pip.button')); $('reading-float').title = t('pip.button'); $('reading-float-label').textContent = t('pip.button');
+  $('reading-console').setAttribute('aria-label', t('tab.prompt'));
+  $('reading-smaller-text').setAttribute('aria-label', t('settings.size') + ' −');
+  $('reading-larger-text').setAttribute('aria-label', t('settings.size') + ' +');
+  $('reading-slower').setAttribute('aria-label', t('fs.slower'));
+  $('reading-faster').setAttribute('aria-label', t('fs.faster'));
+  $('reading-play').setAttribute('aria-label', t('fs.play'));
+  $('reading-exit').setAttribute('aria-label', t('fs.exit'));
+  document.querySelector('.reading-line').dataset.guideLabel = t('options.guide');
 }
 async function setLanguage(code, persist) {
   if (!I18N.languages.some(l => l.code === code)) code = 'en';
@@ -999,11 +1079,16 @@ async function setLanguage(code, persist) {
   if (persist) {
     settings.uiLang = lang; saveSettings();
     const path = (I18N.languages.find(l => l.code === lang) || {}).path || '/';
-    // Each locale has a crawlable, pre-rendered URL. Navigate to it instead of
-    // merely changing the address bar so visitors and search engines see the
-    // same language-specific document, canonical URL, and hreflang set.
-    if (location.pathname !== path && /^\/([a-z]{2}(-[a-z]{2})?\/)?$/.test(location.pathname)) {
-      location.assign(path + location.hash);
+    // Keep the visitor on the equivalent page in the selected language. This
+    // reloads the pre-rendered locale document so navigation, metadata and
+    // content all change together instead of mixing languages in one page.
+    const localeRoots = new Set(I18N.languages.map(item => item.path.split('/').filter(Boolean)[0]).filter(Boolean));
+    const parts = location.pathname.split('/').filter(Boolean);
+    if (localeRoots.has(parts[0])) parts.shift();
+    const suffix = parts.length ? parts.join('/') + '/' : '';
+    const destination = path + suffix + location.search + location.hash;
+    if (location.pathname + location.search + location.hash !== destination) {
+      location.assign(destination);
       return;
     }
   }
@@ -1041,10 +1126,57 @@ $('ui-language').onchange = () => setLanguage($('ui-language').value, true);
     proof.className = 'hero-proof';
     proof.innerHTML = `<span>✓ ${t('footer.free')}</span><span>✓ ${t('header.badge')}</span><span>✓ ${t('compat.title')}</span>`;
     const product = document.createElement('div');
-    product.className = 'hero-product';
-    product.setAttribute('aria-hidden', 'true');
-    product.innerHTML = `<div class="hero-product-bar"><span><i></i> ${t('mode.follow')}</span><span>${t('save.saved')}</span></div><div class="hero-product-stage"><span class="hero-product-kicker">${t('state.ready')}</span><div class="hero-product-copy"><small>${t('flow.read.title')}</small><strong>${t('intro.h1em')}</strong><em>${t('intro.p')}</em></div><div class="hero-product-guide"><span>${t('mode.follow')}</span></div></div><div class="hero-product-controls"><span>00:04:12</span><b>●</b><span>${t('settings.speed')} 40</span></div>`;
-    intro.append(actions, proof, product);
+    product.className = 'hero-product hero-composer';
+    const quickCopy = initial === 'zh-CN' ? {
+      label: '立即开始', title: '粘贴稿子，开始提词', note: '修改会自动保存并同步到工作室', read: '开始提词', record: '带摄像头录制'
+    } : initial === 'zh-TW' ? {
+      label: '立即開始', title: '貼上稿子，開始提詞', note: '修改會自動儲存並同步到工作室', read: '開始提詞', record: '使用攝影機錄影'
+    } : { label: t('state.ready'), title: t('editor.placeholder'), note: t('editor.hint'), read: t('play.start'), record: t('tab.camera') };
+    product.innerHTML = `<div class="hero-composer-head"><div><small>${quickCopy.label}</small><strong>${quickCopy.title}</strong></div><span><i></i> ${t('save.saved')}</span></div><textarea class="hero-script" dir="auto" spellcheck="false" aria-label="${t('editor.aria')}" placeholder="${t('editor.placeholder')}"></textarea><div class="hero-composer-meta"><span class="hero-count"></span><span>${quickCopy.note}</span></div><div class="hero-template-chips"><button data-quick-template="youtube">${t('tpl.youtube')}</button><button data-quick-template="pitch">${t('tpl.pitch')}</button><button data-quick-template="speech">${t('tpl.speech')}</button><button data-quick-template="meeting">${t('tpl.meeting')}</button></div><div class="hero-composer-actions"><button class="hero-start"><span>▶</span> ${quickCopy.read}</button><button class="hero-record"><span>●</span> ${quickCopy.record}</button></div>`;
+    intro.append(actions, proof);
+    ($('hero-composer-mount') || intro).append(product);
+    const quickScript = product.querySelector('.hero-script');
+    const quickCount = product.querySelector('.hero-count');
+    const syncQuickCount = () => {
+      quickCount.textContent = $('word-count').textContent;
+    };
+    quickScript.value = $('script').value;
+    syncQuickCount();
+    quickScript.addEventListener('input', () => {
+      $('script').value = quickScript.value;
+      $('script').dispatchEvent(new Event('input', { bubbles: true }));
+      syncQuickCount();
+    });
+    $('script').addEventListener('input', () => {
+      if (document.activeElement !== quickScript) quickScript.value = $('script').value;
+      syncQuickCount();
+    });
+    product.querySelectorAll('[data-quick-template]').forEach(button => button.onclick = () => {
+      const tpl = templateFor(button.dataset.quickTemplate);
+      quickScript.value = tpl.text;
+      $('script-title').value = tpl.title;
+      quickScript.dispatchEvent(new Event('input', { bubbles: true }));
+      quickScript.focus();
+    });
+    product.querySelector('.hero-start').onclick = () => {
+      document.querySelector('#studio').scrollIntoView({ block: 'start' });
+      setTimeout(() => $('enter-reading').click(), 120);
+    };
+    product.querySelector('.hero-record').onclick = () => {
+      const button = product.querySelector('.hero-record');
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      button.dataset.label = button.innerHTML;
+      button.textContent = t('cam.allow');
+      document.querySelector('#studio').scrollIntoView({ block: 'start' });
+      setTimeout(() => $('camera-tab').click(), 120);
+    };
+    document.addEventListener('cueprompt:camera-state', () => {
+      const button = product.querySelector('.hero-record');
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      if (button.dataset.label) button.innerHTML = button.dataset.label;
+    });
   }
   setMode(settings.mode === 'follow' && SpeechRec ? 'follow' : 'steady', true);
   if (!SpeechRec) $('mode-follow').classList.add('unsupported');

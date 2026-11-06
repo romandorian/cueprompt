@@ -1,6 +1,12 @@
 'use strict';
 if ('serviceWorker' in navigator && window.isSecureContext) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+      await registration.update();
+      window.addEventListener('focus', () => registration.update().catch(() => {}));
+    } catch { }
+  });
 }
 let installPrompt;
 window.addEventListener('beforeinstallprompt', event => {

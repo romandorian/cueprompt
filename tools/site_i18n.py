@@ -13,11 +13,6 @@ LOCALES = (
     ('ja', '日本語', 'ltr', '/ja/', 'ja'),
     ('ko', '한국어', 'ltr', '/ko/', 'ko'),
     ('ru', 'Русский', 'ltr', '/ru/', 'ru'),
-    ('ar', 'العربية', 'rtl', '/ar/', 'ar'),
-    ('hi', 'हिन्दी', 'ltr', '/hi/', 'hi'),
-    ('id', 'Bahasa Indonesia', 'ltr', '/id/', 'id'),
-    ('vi', 'Tiếng Việt', 'ltr', '/vi/', 'vi'),
-    ('th', 'ไทย', 'ltr', '/th/', 'th'),
     ('zh-CN', '简体中文', 'ltr', '/zh/', 'zh-CN'),
     ('zh-TW', '繁體中文', 'ltr', '/zh-tw/', 'zh-TW'),
 )
