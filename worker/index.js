@@ -3,12 +3,18 @@ const CJK_LANGUAGES = new Set(['Simplified Chinese', 'Traditional Chinese', 'Jap
 const ALLOWED_TONES = new Set(['friendly', 'professional', 'energetic', 'calm']);
 const ALLOWED_LANGUAGES = new Set(['English', 'Simplified Chinese', 'Traditional Chinese', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Russian', 'Arabic', 'Hindi', 'Indonesian', 'Vietnamese', 'Thai', 'Turkish', 'Dutch', 'Polish']);
 const CANONICAL_ORIGIN = 'https://cueprompt.io';
+const LEGACY_PATH_REDIRECTS = new Map([
+  ['/ja/record-video/', '/ja/teleprompter-with-camera/'],
+  ['/ja/teleprompter/', '/ja/']
+]);
 
 export function canonicalRedirect(requestUrl) {
   const url = new URL(requestUrl);
   const productionHost = url.hostname === 'cueprompt.io' || url.hostname === 'www.cueprompt.io' || url.hostname.endsWith('.workers.dev');
-  if (!productionHost || (url.protocol === 'https:' && url.hostname === 'cueprompt.io')) return null;
-  return new URL(`${url.pathname}${url.search}`, CANONICAL_ORIGIN).href;
+  if (!productionHost) return null;
+  const canonicalPath = LEGACY_PATH_REDIRECTS.get(url.pathname) || url.pathname;
+  if (url.protocol === 'https:' && url.hostname === 'cueprompt.io' && canonicalPath === url.pathname) return null;
+  return new URL(`${canonicalPath}${url.search}`, CANONICAL_ORIGIN).href;
 }
 
 function json(data, status = 200, headers = {}) {

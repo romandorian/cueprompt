@@ -25,6 +25,20 @@ test('serves the canonical HTTPS host without redirecting', async () => {
   assert.equal(response, expected);
 });
 
+test('redirects retired Japanese routes to their closest current pages', async () => {
+  const cases = [
+    ['https://cueprompt.io/ja/record-video/', 'https://cueprompt.io/ja/teleprompter-with-camera/'],
+    ['https://cueprompt.io/ja/teleprompter/', 'https://cueprompt.io/ja/'],
+    ['http://cueprompt.io/ja/record-video/?source=old', 'https://cueprompt.io/ja/teleprompter-with-camera/?source=old']
+  ];
+  for (const [source, destination] of cases) {
+    assert.equal(canonicalRedirect(source), destination);
+    const response = await worker.fetch(new Request(source), { ASSETS: { fetch: assert.fail } });
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.get('location'), destination);
+  }
+});
+
 test('builds a bounded Chinese generation prompt', () => {
   const messages = buildMessages({ mode: 'generate', topic: '介绍 CuePrompt', durationMinutes: 1, language: 'Simplified Chinese', tone: 'friendly' });
   assert.equal(messages.length, 2);
