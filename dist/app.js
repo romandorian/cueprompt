@@ -891,6 +891,18 @@ const ai = Object.assign({ base: AI_PRESETS.dashscope.base, model: 'qwen-plus', 
 const AI_LANGS = [['English', 'English'], ['Simplified Chinese', '简体中文'], ['Traditional Chinese', '繁體中文'], ['Spanish', 'Español'], ['Portuguese', 'Português'], ['French', 'Français'], ['German', 'Deutsch'], ['Italian', 'Italiano'], ['Japanese', '日本語'], ['Korean', '한국어'], ['Russian', 'Русский'], ['Arabic', 'العربية'], ['Hindi', 'हिन्दी'], ['Indonesian', 'Bahasa Indonesia'], ['Vietnamese', 'Tiếng Việt'], ['Thai', 'ไทย'], ['Turkish', 'Türkçe'], ['Dutch', 'Nederlands'], ['Polish', 'Polski']];
 const UI_TO_AI = { en: 'English', 'zh-CN': 'Simplified Chinese', 'zh-TW': 'Traditional Chinese', es: 'Spanish', pt: 'Portuguese', fr: 'French', de: 'German', ja: 'Japanese', ko: 'Korean', ru: 'Russian', ar: 'Arabic', hi: 'Hindi', id: 'Indonesian', vi: 'Vietnamese', th: 'Thai' };
 let aiTab = 'generate';
+const aiSource = document.createElement('p');
+aiSource.id = 'ai-source'; aiSource.className = 'hint'; aiSource.hidden = true;
+aiSource.setAttribute('role', 'status'); aiSource.setAttribute('aria-live', 'polite');
+$('ai-run').closest('.dialog-actions').before(aiSource);
+function aiSourceScript() {
+  const result = $('ai-result').value.trim();
+  return !$('ai-result-wrap').hidden && result ? result : $('script').value.trim();
+}
+function updateAiSource() {
+  aiSource.hidden = aiTab === 'generate';
+  if (!aiSource.hidden) aiSource.textContent = t(!$('ai-result-wrap').hidden && $('ai-result').value.trim() ? 'ai.sourceResult' : 'ai.sourceEditor');
+}
 function fillAiLanguages() {
   for (const sel of document.querySelectorAll('.ai-lang-select')) { const v = sel.value; sel.textContent = ''; for (const [en, native] of AI_LANGS) sel.append(new Option(native, en)); sel.value = v || UI_TO_AI[lang] || 'English'; }
   if (!$('ai-target').dataset.touched) $('ai-target').value = lang === 'en' ? 'Simplified Chinese' : 'English';
@@ -912,12 +924,14 @@ document.querySelectorAll('[data-ai-tab]').forEach(b => b.onclick = () => {
   aiTab = b.dataset.aiTab;
   document.querySelectorAll('[data-ai-tab]').forEach(x => x.classList.toggle('active', x === b));
   document.querySelectorAll('[data-ai-pane]').forEach(p => p.hidden = p.dataset.aiPane !== aiTab);
+  updateAiSource();
 });
+$('ai-result').addEventListener('input', updateAiSource);
 $('ai-rewrite-mode').onchange = () => { $('ai-instruction-wrap').hidden = $('ai-rewrite-mode').value !== 'custom'; };
 const AI_SYSTEM = "You are a scriptwriter for teleprompter videos and talks. Write words meant to be spoken aloud: short sentences, a natural rhythm and short paragraphs separated by blank lines. You may start sections with '## ' headings and add [pause] where a pause helps the delivery. Output only the script itself: no title line, no explanations, no other markdown.";
 const CJK_AI = ['Simplified Chinese', 'Traditional Chinese', 'Japanese'];
 function aiMessages() {
-  const script = $('script').value.trim();
+  const script = aiSourceScript();
   if (aiTab === 'generate') {
     const topic = $('ai-topic').value.trim(); if (!topic) throw new Error(t('ai.needTopic'));
     const minutes = Math.min(20, Math.max(0.5, Number($('ai-duration').value) || 1)), language = $('ai-language').value, tone = $('ai-tone').value;
@@ -938,7 +952,7 @@ function hostedAiPayload() {
     topic: $('ai-topic').value.trim(), durationMinutes: Number($('ai-duration').value) || 1,
     language: $('ai-language').value, tone: $('ai-tone').value
   });
-  payload.script = $('script').value.trim();
+  payload.script = aiSourceScript();
   if (aiTab === 'rewrite') Object.assign(payload, { rewriteMode: $('ai-rewrite-mode').value, instruction: $('ai-instruction').value.trim() });
   else payload.target = $('ai-target').value;
   return payload;
@@ -970,13 +984,13 @@ $('ai-run').onclick = async () => {
     let data = null; try { data = await res.json(); } catch { }
     if (!res.ok) {
       const code = data?.error?.code;
-      fail(hosted ? (code === 'RATE_LIMITED' ? t('ai.rateLimited') : code === 'AI_NOT_CONFIGURED' ? t('ai.notConfigured') : t('ai.errorHosted')) : t('ai.errorHttp', { msg: (data && (data.error?.message || data.message)) || res.status + ' ' + res.statusText }));
+      fail(hosted ? (code === 'RATE_LIMITED' ? t('ai.rateLimited') : code === 'AI_NOT_CONFIGURED' ? t('ai.notConfigured') : code === 'OUTPUT_LANGUAGE_MISMATCH' ? t('ai.languageMismatch') : t('ai.errorHosted')) : t('ai.errorHttp', { msg: (data && (data.error?.message || data.message)) || res.status + ' ' + res.statusText }));
       return;
     }
     let text = hosted ? data?.text : ai.protocol === 'anthropic' ? (data?.content || []).filter(part => part.type === 'text').map(part => part.text).join('\n') : (data?.choices?.[0]?.message?.content || '');
     text = text.replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
     if (!text) { fail(t('ai.empty')); return; }
-    $('ai-result').value = text; $('ai-result-wrap').hidden = false;
+    $('ai-result').value = text; $('ai-result-wrap').hidden = false; updateAiSource();
   } finally { btn.disabled = false; btn.lastElementChild.textContent = t('ai.run'); }
 };
 $('ai-replace').onclick = async () => {

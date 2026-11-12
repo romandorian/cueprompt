@@ -1,7 +1,8 @@
 const AI_SYSTEM = "You are a scriptwriter for teleprompter videos and talks. Write words meant to be spoken aloud: short sentences, a natural rhythm and short paragraphs separated by blank lines. You may start sections with '## ' headings and add [pause] where a pause helps the delivery. Output only the script itself: no title line, no explanations, no other markdown.";
 const CJK_LANGUAGES = new Set(['Simplified Chinese', 'Traditional Chinese', 'Japanese']);
 const ALLOWED_TONES = new Set(['friendly', 'professional', 'energetic', 'calm']);
-const ALLOWED_LANGUAGES = new Set(['English', 'Simplified Chinese', 'Traditional Chinese', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Russian', 'Arabic', 'Hindi', 'Indonesian', 'Vietnamese', 'Thai', 'Turkish', 'Dutch', 'Polish']);
+export const AI_LANGUAGES = Object.freeze(['English', 'Simplified Chinese', 'Traditional Chinese', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Russian', 'Arabic', 'Hindi', 'Indonesian', 'Vietnamese', 'Thai', 'Turkish', 'Dutch', 'Polish']);
+const ALLOWED_LANGUAGES = new Set(AI_LANGUAGES);
 const CANONICAL_ORIGIN = 'https://cueprompt.io';
 const LEGACY_PATH_REDIRECTS = new Map([
   ['/ja/record-video/', '/ja/teleprompter-with-camera/'],
@@ -55,6 +56,41 @@ export function buildMessages(body) {
   return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Translate the following teleprompter script into ${target}. Make it sound natural when spoken. Keep '## ' headings and keep [pause]/[slow] markers in place with the bracket keywords in English.\n\nSCRIPT:\n${script}` }];
 }
 
+const LANGUAGE_WRITING_SYSTEM = {
+  'Simplified Chinese': 'cjk', 'Traditional Chinese': 'cjk', Japanese: 'cjk', Korean: 'hangul',
+  Russian: 'cyrillic', Arabic: 'arabic', Hindi: 'devanagari', Thai: 'thai'
+};
+
+export function dominantWritingSystem(value) {
+  const text = cleanString(value, 30000).replace(/\[(?:pause|slow)\]|##/gi, '');
+  const counts = {
+    cjk: (text.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/gu) || []).length,
+    hangul: (text.match(/\p{Script=Hangul}/gu) || []).length,
+    cyrillic: (text.match(/\p{Script=Cyrillic}/gu) || []).length,
+    arabic: (text.match(/\p{Script=Arabic}/gu) || []).length,
+    devanagari: (text.match(/\p{Script=Devanagari}/gu) || []).length,
+    thai: (text.match(/\p{Script=Thai}/gu) || []).length,
+    latin: (text.match(/\p{Script=Latin}/gu) || []).length
+  };
+  const [system, count] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return count >= 4 ? system : null;
+}
+
+export function outputLanguageMatches(body, output) {
+  const actual = dominantWritingSystem(output);
+  if (!actual) return true;
+  if (body?.mode === 'rewrite') {
+    const source = dominantWritingSystem(body.script);
+    return !source || source === actual;
+  }
+  if (body?.mode === 'translate') {
+    const expected = LANGUAGE_WRITING_SYSTEM[body.target] || 'latin';
+    return expected === actual;
+  }
+  const expected = LANGUAGE_WRITING_SYSTEM[body?.language] || 'latin';
+  return expected === actual;
+}
+
 function errorCode(error) {
   return ['INVALID_MODE', 'TOPIC_REQUIRED', 'SCRIPT_REQUIRED'].includes(error?.message) ? error.message : 'INVALID_REQUEST';
 }
@@ -83,28 +119,40 @@ async function generate(request, env) {
   try { messages = buildMessages(body); }
   catch (error) { return json({ error: { code: errorCode(error), retryable: false } }, 400); }
 
-  let upstream;
-  try {
-    upstream = await fetch(`${String(env.DEEPSEEK_BASE_URL).replace(/\/+$/, '')}/chat/completions`, {
+  const requestUpstream = async currentMessages => {
+    const upstream = await fetch(`${String(env.DEEPSEEK_BASE_URL).replace(/\/+$/, '')}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.DEEPSEEK_API_KEY}` },
-      body: JSON.stringify({ model: env.DEEPSEEK_MODEL || 'deepseek-flash', messages, temperature: 0.7, max_tokens: 2400, thinking: { type: 'disabled' } }),
+      body: JSON.stringify({ model: env.DEEPSEEK_MODEL || 'deepseek-flash', messages: currentMessages, temperature: body.mode === 'generate' ? 0.7 : 0.3, max_tokens: 2400, thinking: { type: 'disabled' } }),
       signal: AbortSignal.timeout(45000)
     });
+    let data = null;
+    try { data = await upstream.json(); } catch { /* Upstream may return an HTML error page. */ }
+    return { upstream, data };
+  };
+
+  let upstream, data;
+  try {
+    ({ upstream, data } = await requestUpstream(messages));
   } catch {
     return json({ error: { code: 'PROVIDER_UNAVAILABLE', retryable: true } }, 502);
   }
-
-  let data = null;
-  try { data = await upstream.json(); } catch { /* Upstream may return an HTML error page. */ }
   if (!upstream.ok) {
     console.error('DeepSeek request failed', { status: upstream.status, code: data?.code || data?.error?.code });
     const code = upstream.status === 401 ? 'AI_AUTH_FAILED' : upstream.status === 429 ? 'RATE_LIMITED' : upstream.status >= 500 ? 'PROVIDER_UNAVAILABLE' : 'PROVIDER_ERROR';
     return json({ error: { code, retryable: upstream.status === 429 || upstream.status >= 500 } }, upstream.status === 429 ? 429 : 502);
   }
 
-  const text = cleanString(data?.choices?.[0]?.message?.content, 30000).replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
+  let text = cleanString(data?.choices?.[0]?.message?.content, 30000).replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
   if (!text) return json({ error: { code: 'EMPTY_RESPONSE', retryable: true } }, 502);
+  if (!outputLanguageMatches(body, text)) {
+    const correction = [...messages, { role: 'assistant', content: text }, { role: 'user', content: 'The previous response used the wrong language. Try again and obey the requested output language exactly. Return only the corrected script.' }];
+    try {
+      const retry = await requestUpstream(correction);
+      if (retry.upstream.ok) text = cleanString(retry.data?.choices?.[0]?.message?.content, 30000).replace(/^```[a-z]*\n?|```\s*$/g, '').trim();
+    } catch { /* Preserve the validation error below. */ }
+    if (!text || !outputLanguageMatches(body, text)) return json({ error: { code: 'OUTPUT_LANGUAGE_MISMATCH', retryable: true } }, 502);
+  }
   return json({ text, model: env.DEEPSEEK_MODEL || 'deepseek-flash' });
 }
 

@@ -161,6 +161,14 @@ test('long translated labels can wrap without overflowing controls', () => {
   assert.match(css, /panel-actions\{display:flex[^}]+flex-wrap:wrap/);
 });
 
+test('AI rewrite and translation continue from the visible AI result', () => {
+  assert.match(app, /function aiSourceScript\(\)/);
+  assert.match(app, /!\$\('ai-result-wrap'\)\.hidden && result \? result : \$\('script'\)\.value\.trim\(\)/);
+  assert.match(app, /payload\.script = aiSourceScript\(\)/);
+  assert.match(app, /updateAiSource\(\)/);
+  assert.match(app, /aria-live', 'polite'/);
+});
+
 test('the above-the-fold logo is appropriately sized for its rendered dimensions', () => {
   assert.ok(logoStat.size < 20_000, `logo should stay below 20 KB, got ${logoStat.size}`);
   assert.match(home, /cuepromptlogo\.jpeg" alt="" width="44" height="44"/);
