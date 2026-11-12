@@ -169,6 +169,13 @@ test('AI rewrite and translation continue from the visible AI result', () => {
   assert.match(app, /aria-live', 'polite'/);
 });
 
+test('bring-your-own-key prompts preserve script facts and translation completeness', () => {
+  assert.match(app, /Preserve the original topic, meaning, facts, numbers, names, links and calls to action/);
+  assert.match(app, /Do not introduce a new topic, invent information, or translate the script/);
+  assert.match(app, /Preserve the complete meaning, facts, numbers, names, links, calls to action, tone and paragraph structure/);
+  assert.match(app, /Do not summarize, omit information, add new claims, or rewrite the message/);
+});
+
 test('the above-the-fold logo is appropriately sized for its rendered dimensions', () => {
   assert.ok(logoStat.size < 20_000, `logo should stay below 20 KB, got ${logoStat.size}`);
   assert.match(home, /cuepromptlogo\.jpeg" alt="" width="44" height="44"/);

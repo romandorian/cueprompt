@@ -49,11 +49,11 @@ export function buildMessages(body) {
       clearer: 'Make it clearer and easier to follow, with simpler sentences.'
     };
     const instruction = instructions[body.rewriteMode] || cleanString(body.instruction, 500) || 'Improve it.';
-    return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Rewrite the following teleprompter script. ${instruction} Keep the same language. Keep '## ' headings and [pause]/[slow] markers where they still make sense.\n\nSCRIPT:\n${script}` }];
+    return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Rewrite the following teleprompter script. ${instruction}\n\nPreserve the original topic, meaning, facts, numbers, names, links and calls to action. Do not introduce a new topic, invent information, or translate the script. Only make the requested style or length changes. Keep the same language. Preserve the paragraph structure where practical. Keep '## ' headings and [pause]/[slow] markers where they still make sense. Return only the rewritten script.\n\nSCRIPT:\n${script}` }];
   }
 
   const target = ALLOWED_LANGUAGES.has(body.target) ? body.target : 'English';
-  return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Translate the following teleprompter script into ${target}. Make it sound natural when spoken. Keep '## ' headings and keep [pause]/[slow] markers in place with the bracket keywords in English.\n\nSCRIPT:\n${script}` }];
+  return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Translate the following teleprompter script into ${target}. Translate naturally for spoken delivery rather than word for word.\n\nPreserve the complete meaning, facts, numbers, names, links, calls to action, tone and paragraph structure. Do not summarize, omit information, add new claims, or rewrite the message. Keep '## ' headings and keep [pause]/[slow] markers in place with the bracket keywords in English. Return only the translated script.\n\nSCRIPT:\n${script}` }];
 }
 
 const LANGUAGE_WRITING_SYSTEM = {

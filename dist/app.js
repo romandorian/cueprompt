@@ -942,9 +942,9 @@ function aiMessages() {
   if (aiTab === 'rewrite') {
     const mode = $('ai-rewrite-mode').value;
     const instruction = { shorter: 'Make it about 30% shorter while keeping the key message.', conversational: 'Make it sound more natural and conversational, as if talking to one person.', clearer: 'Make it clearer and easier to follow, with simpler sentences.' }[mode] || $('ai-instruction').value.trim() || 'Improve it.';
-    return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Rewrite the following teleprompter script. ${instruction} Keep the same language. Keep '## ' headings and [pause]/[slow] markers where they still make sense.\n\nSCRIPT:\n${script}` }];
+    return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Rewrite the following teleprompter script. ${instruction}\n\nPreserve the original topic, meaning, facts, numbers, names, links and calls to action. Do not introduce a new topic, invent information, or translate the script. Only make the requested style or length changes. Keep the same language. Preserve the paragraph structure where practical. Keep '## ' headings and [pause]/[slow] markers where they still make sense. Return only the rewritten script.\n\nSCRIPT:\n${script}` }];
   }
-  return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Translate the following teleprompter script into ${$('ai-target').value}. Make it sound natural when spoken. Keep '## ' headings and keep [pause]/[slow] markers in place with the bracket keywords in English.\n\nSCRIPT:\n${script}` }];
+  return [{ role: 'system', content: AI_SYSTEM }, { role: 'user', content: `Translate the following teleprompter script into ${$('ai-target').value}. Translate naturally for spoken delivery rather than word for word.\n\nPreserve the complete meaning, facts, numbers, names, links, calls to action, tone and paragraph structure. Do not summarize, omit information, add new claims, or rewrite the message. Keep '## ' headings and keep [pause]/[slow] markers in place with the bracket keywords in English. Return only the translated script.\n\nSCRIPT:\n${script}` }];
 }
 function hostedAiPayload() {
   const payload = { mode: aiTab };

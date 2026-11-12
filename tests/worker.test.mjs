@@ -47,8 +47,14 @@ test('builds a bounded Chinese generation prompt', () => {
 });
 
 test('builds rewrite and translation prompts', () => {
-  assert.match(buildMessages({ mode: 'rewrite', script: 'Hello', rewriteMode: 'shorter' })[1].content, /30% shorter/);
-  assert.match(buildMessages({ mode: 'translate', script: 'Hello', target: 'Japanese' })[1].content, /into Japanese/);
+  const rewrite = buildMessages({ mode: 'rewrite', script: 'Hello', rewriteMode: 'shorter' })[1].content;
+  assert.match(rewrite, /30% shorter/);
+  assert.match(rewrite, /Preserve the original topic, meaning, facts, numbers, names, links and calls to action/);
+  assert.match(rewrite, /Do not introduce a new topic, invent information, or translate the script/);
+  const translation = buildMessages({ mode: 'translate', script: 'Hello', target: 'Japanese' })[1].content;
+  assert.match(translation, /into Japanese/);
+  assert.match(translation, /Preserve the complete meaning, facts, numbers, names, links, calls to action, tone and paragraph structure/);
+  assert.match(translation, /Do not summarize, omit information, add new claims, or rewrite the message/);
 });
 
 test('builds generation and translation prompts for every supported AI language', () => {
